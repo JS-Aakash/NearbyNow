@@ -30,7 +30,7 @@
     <!-- Sidebar for desktop -->
     <aside class="hidden md:flex md:flex-col bg-white w-50 p-6 shadow-lg space-y-6">
         <div class="flex items-center space-x-3">
-            <img src="profile.png" class="w-11 h-11 rounded-full" alt="Profile" />
+            <img src="Images/profile.png" class="w-11 h-11 rounded-full" alt="Profile" />
             <span class="text-lg font-bold">NearbyNow</span>
         </div>
         <nav class="space-y-5 text-base">
@@ -38,7 +38,9 @@
             <a href="add-message.html" class="flex items-center gap-2 hover:text-indigo-600 font-medium">Add Post</a>
             <a href="notifications.html"
                 class="flex items-center gap-2 hover:text-indigo-600 font-medium">Notifications</a>
+            <a href="profile.html" class="flex items-center gap-2 hover:text-indigo-600 font-medium">Profile</a>
             <a href="settings.html" class="flex items-center gap-2 hover:text-indigo-600 font-medium">Settings</a>
+            <a href="index.html" class="flex items-center gap-2 hover:text-indigo-600 font-medium">Logout</a>
         </nav>
     </aside>
 
@@ -47,7 +49,7 @@
 
         <!-- Mobile Header -->
         <header class="md:hidden bg-white p-4 flex justify-between items-center shadow">
-            <img src="profile.png" class="w-9 h-9 rounded-full" alt="" />
+            <img src="Images/profile.png" class="w-9 h-9 rounded-full" alt="" />
             <h1 class="text-lg font-bold">NearbyNow</h1>
             <button onclick="location.href='settings.html'"
                 class="text-gray-800 text-2xl p-2 rounded-full hover:bg-gray-200 transition duration-200"
@@ -59,42 +61,42 @@
         <section class="p-4 max-w-2xl mx-auto w-full space-y-6 animate-fade">
 
             <!-- Profile View -->
-            <div id="profileContainer" class="hidden bg-white rounded-xl shadow p-6">
+            <div id="profileContainer" class="bg-white rounded-xl shadow p-6 space-y-6">
+
                 <div class="flex flex-col items-center space-y-4">
                     <h2 id="name" class="text-2xl font-bold text-gray-800"></h2>
                     <button id="editProfile"
-                        class="text-sm px-4 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700">
+                        class="text-sm px-4 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 hidden">
                         Edit Profile
                     </button>
                 </div>
-                <div class="mt-6 space-y-4 text-gray-700">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <p class="text-sm font-semibold">Mobile</p>
-                            <p id="mobile" class="text-base"></p>
-                        </div>
-                        <div>
-                            <p class="text-sm font-semibold">Email</p>
-                            <p id="email" class="text-base"></p>
-                        </div>
-                        <div>
-                            <p class="text-sm font-semibold">Gender</p>
-                            <p id="gender" class="text-base"></p>
-                        </div>
-                        <div>
-                            <p class="text-sm font-semibold">Age</p>
-                            <p id="age" class="text-base"></p>
-                        </div>
+                <div class="grid grid-cols-2 gap-4 text-gray-700">
+                    <div>
+                        <p class="text-sm font-semibold">Mobile</p>
+                        <p id="mobile" class="text-base"></p>
                     </div>
                     <div>
+                        <p class="text-sm font-semibold">Email</p>
+                        <p id="email" class="text-base break-words"></p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-semibold">Gender</p>
+                        <p id="gender" class="text-base"></p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-semibold">Age</p>
+                        <p id="age" class="text-base"></p>
+                    </div>
+                    <div class="col-span-2">
                         <p class="text-sm font-semibold">Address</p>
                         <p id="address" class="text-base"></p>
                     </div>
-                    <div>
+                    <div class="col-span-2">
                         <p class="text-sm font-semibold">About</p>
                         <p id="about" class="text-base"></p>
                     </div>
                 </div>
+
             </div>
 
             <!-- Profile Form -->
@@ -115,35 +117,56 @@
                         class="w-full border p-2 rounded" />
                     <textarea name="about" placeholder="About You" class="w-full border p-2 rounded"></textarea>
                     <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700">Save
-                        Profile
-                    </button>
+                        Profile</button>
                 </form>
             </div>
+
+
+            <!-- User Posts -->
+            <section id="postsContainer" class="space-y-6">
+                <h3 class="text-xl font-semibold text-gray-800">Posts</h3>
+                <div id="postsList" class="space-y-4">
+                    <!-- Posts will be appended here -->
+                </div>
+            </section>
 
         </section>
 
         <!-- Mobile Navigation -->
         <nav
             class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t shadow-inner flex justify-around py-2 text-indigo-700 text-xl font-semibold">
-            <a href="home.html" class="flex flex-col items-center gap-0.5">
-                <span class="text-2xl">🏠︎</span>
+
+            <a href="home.html" class="flex flex-col items-center gap-0.5" aria-label="Home">
+                <span class="text-2xl select-none">🏠︎</span>
                 <span class="text-sm">Home</span>
             </a>
-            <a href="add-message.html" class="flex flex-col items-center gap-0.5">
-                <span class="text-2xl">➕</span>
+
+            <a href="add-message.html" class="flex flex-col items-center gap-0.5" aria-label="Post Message">
+                <span class="text-2xl select-none">➕</span>
                 <span class="text-sm">Post</span>
             </a>
-            <a href="notifications.html" class="flex flex-col items-center gap-0.5">
-                <span class="text-2xl">✉︎</span>
+
+            <a href="notifications.html" class="flex flex-col items-center gap-0.5" aria-label="Notifications">
+                <span class="text-2xl select-none">✉︎</span>
                 <span class="text-sm">Alerts</span>
             </a>
+
+            <a href="profile.html" class="flex flex-col items-center gap-0.5" aria-label="Profile">
+                <span class="text-2xl select-none">👤</span>
+                <span class="text-sm">Profile</span>
+            </a>
+
         </nav>
 
     </main>
 
     <script type="module">
         import { db, auth } from './firebase-config.js';
-        import { doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+        import {
+            doc, getDoc, setDoc,
+            collection, query, where, getDocs,
+            deleteDoc, updateDoc, arrayRemove
+        } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
         import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
         // Utility: parse URL query params to get 'uid', if any
@@ -152,14 +175,50 @@
             return params.get('uid');
         }
 
+        // Utils:
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text.replace(/[&<>"']/g, function (m) {
+                switch (m) {
+                    case '&': return '&amp;';
+                    case '<': return '&lt;';
+                    case '>': return '&gt;';
+                    case '"': return '&quot;';
+                    case "'": return '&#39;';
+                    default: return m;
+                }
+            });
+        }
+
+        // Format timestamp to "time ago"
+        function timeAgo(timestampMs) {
+            if (!timestampMs) return "just now";
+            const seconds = Math.floor((Date.now() - timestampMs) / 1000);
+            if (seconds < 30) return "just now";
+            const intervals = [
+                { label: "year", seconds: 31536000 },
+                { label: "month", seconds: 2592000 },
+                { label: "day", seconds: 86400 },
+                { label: "hour", seconds: 3600 },
+                { label: "minute", seconds: 60 },
+            ];
+            for (const interval of intervals) {
+                const count = Math.floor(seconds / interval.seconds);
+                if (count > 0) return `${count} ${interval.label}${count !== 1 ? "s" : ""} ago`;
+            }
+            return "just now";
+        }
+
         const profileContainer = document.getElementById('profileContainer');
         const formContainer = document.getElementById('formContainer');
         const profileForm = document.getElementById('profileForm');
         const editBtn = document.getElementById('editProfile');
+        const postsList = document.getElementById('postsList');
 
         let currentUser = null;
         let viewingUid = null;
         let isOwnProfile = false;
+        let userProfileData = null;
 
         onAuthStateChanged(auth, async (user) => {
             if (!user) {
@@ -168,9 +227,7 @@
             }
             currentUser = user;
 
-            // Determine which profile to show:
-            // If uid param absent or equals current user's uid -> own profile
-            // Else viewing someone else's profile
+            // Determine profile viewed
             const uidFromQuery = getQueryUid();
             if (!uidFromQuery || uidFromQuery === currentUser.uid) {
                 viewingUid = currentUser.uid;
@@ -180,46 +237,60 @@
                 isOwnProfile = false;
             }
 
-            if (isOwnProfile) {
-                // Load current user's profile
-                const docRef = doc(db, 'profiles', viewingUid);
-                const docSnap = await getDoc(docRef);
-
-                if (docSnap.exists()) {
-                    renderProfile(docSnap.data());
-                } else {
-                    // No profile yet, show form to fill
-                    formContainer.classList.remove('hidden');
-                    profileContainer.classList.add('hidden');
-                }
-                // Show Edit button for own profile
-                editBtn.style.display = 'inline-block';
-            } else {
-                // Viewing other's profile - show their info, hide edit & form
-                const docRef = doc(db, 'profiles', viewingUid);
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    renderProfile(docSnap.data());
-                } else {
-                    // If no profile found, show fallback message
-                    profileContainer.innerHTML = '<p class="text-center text-gray-500">Profile not found.</p>';
-                    profileContainer.classList.remove('hidden');
-                }
-                formContainer.classList.add('hidden');
-                profileContainer.classList.remove('hidden');
-
-                // Hide Edit Profile button for others' profiles
-                editBtn.style.display = 'none';
-
-                // Placeholder for future features on others' profile
-                // e.g., disable or hide any future controls here
-            }
+            await loadProfile();
+            await loadUserPosts();
         });
+
+        // Load profile data and render it
+        async function loadProfile() {
+            try {
+                const docRef = doc(db, 'profiles', viewingUid);
+                const profileSnap = await getDoc(docRef);
+
+                if (profileSnap.exists()) {
+                    userProfileData = profileSnap.data();
+                    // Show profile form only for own profile if not set
+                    if (isOwnProfile) {
+                        if (!userProfileData.name) {
+                            // Show form to fill profile
+                            formContainer.classList.remove('hidden');
+                            profileContainer.classList.add('hidden');
+                        } else {
+                            renderProfile(userProfileData);
+                            formContainer.classList.add('hidden');
+                            profileContainer.classList.remove('hidden');
+                            editBtn.style.display = 'inline-block';
+                        }
+                    } else {
+                        // Viewing others' profile
+                        renderProfile(userProfileData);
+                        formContainer.classList.add('hidden');
+                        profileContainer.classList.remove('hidden');
+                        editBtn.style.display = 'none';
+                    }
+                } else {
+                    // No profile found - show form if own, or fallback message otherwise
+                    if (isOwnProfile) {
+                        formContainer.classList.remove('hidden');
+                        profileContainer.classList.add('hidden');
+                        editBtn.style.display = 'none';
+                    } else {
+                        profileContainer.innerHTML = '<p class="text-center text-gray-500">Profile not found.</p>';
+                        profileContainer.classList.remove('hidden');
+                        formContainer.classList.add('hidden');
+                        editBtn.style.display = 'none';
+                    }
+                }
+            } catch (err) {
+                console.error("Error loading profile:", err);
+                profileContainer.innerHTML = '<p class="text-center text-red-600">Failed to load profile.</p>';
+            }
+        }
+
 
         profileForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-
-            if (!isOwnProfile) return; // just in case
+            if (!isOwnProfile) return;
 
             const data = {
                 name: profileForm.name.value.trim(),
@@ -233,25 +304,17 @@
 
             try {
                 await setDoc(doc(db, 'profiles', currentUser.uid), data);
+                userProfileData = data;
                 renderProfile(data);
+                formContainer.classList.add('hidden');
+                profileContainer.classList.remove('hidden');
+                editBtn.style.display = 'inline-block';
             } catch (err) {
                 alert('Failed to save profile: ' + err.message);
                 console.error(err);
             }
         });
 
-        function renderProfile(data) {
-            document.getElementById('name').textContent = data.name || '';
-            document.getElementById('email').textContent = data.email || '';
-            document.getElementById('mobile').textContent = data.mobile || '';
-            document.getElementById('gender').textContent = data.gender || '';
-            document.getElementById('age').textContent = data.age || '';
-            document.getElementById('address').textContent = data.address || '';
-            document.getElementById('about').textContent = data.about || '';
-
-            formContainer.classList.add('hidden');
-            profileContainer.classList.remove('hidden');
-        }
 
         editBtn.addEventListener('click', async () => {
             if (!isOwnProfile) return;
@@ -274,6 +337,215 @@
                 console.error(err);
             }
         });
+
+        // Load user posts and render
+        async function loadUserPosts() {
+            postsList.innerHTML = `<div class="text-center text-gray-500 py-6">Loading posts...</div>`;
+
+            try {
+                const q = query(collection(db, 'messages'), where('uid', '==', viewingUid));
+                const querySnap = await getDocs(q);
+
+                if (querySnap.empty) {
+                    postsList.innerHTML = '<p class="text-center text-gray-500 py-6">No posts found.</p>';
+                    return;
+                }
+
+                postsList.innerHTML = '';
+
+                for (const docSnap of querySnap.docs) {
+                    const postData = docSnap.data();
+                    const postId = docSnap.id;
+
+                    renderPost(postId, postData);
+                }
+            } catch (err) {
+                console.error("Error loading posts:", err);
+                postsList.innerHTML = '<p class="text-center text-red-600">Failed to load posts.</p>';
+            }
+        }
+        function formatExpiry(timestampMs) {
+            if (!timestampMs) return 'No expiry';
+            const dt = new Date(timestampMs);
+            return `Expires at ${dt.toLocaleString()}`; // eg: "Expires at 8/7/2025, 10:00:00 PM"
+        }
+        // Render a single post with comments and delete options based on ownership
+        function renderPost(postId, postData) {
+            // Format expiry
+            let expiryText = '';
+            if (postData.expiresAt?.seconds) {
+                const expiryTs = postData.expiresAt.seconds * 1000;
+                expiryText = formatExpiry(expiryTs);
+            } else {
+                expiryText = 'No expiry';
+            }
+
+            const comments = postData.comments || [];
+
+            const postDiv = document.createElement('div');
+            postDiv.className = "bg-white p-4 rounded-xl shadow space-y-3 animate-fade";
+            postDiv.setAttribute('data-post-id', postId);
+
+            postDiv.innerHTML = `
+    <div class="flex justify-between items-center">
+      <h4 class="text-lg font-semibold text-gray-900">${escapeHtml(postData.title)}</h4>
+      ${isOwnProfile ? `<button data-post-id="${postId}" aria-label="Delete post" title="Delete Post" class="delete-post-btn text-red-500 hover:text-red-700 transition">🗑️</button>` : ''}
+    </div>
+    <p class="text-gray-700">${escapeHtml(postData.description)}</p>
+
+    <div class="text-xs text-gray-500 flex justify-between">
+      <div>${escapeHtml(postData.customLocation || "Unknown location")}</div>
+      <div>${expiryText}</div>
+    </div>
+
+    <div class="text-xs text-gray-500">${escapeHtml(postData.category || '')}</div>
+
+    <!-- Comments Section -->
+    <div class="mt-4">
+      <button aria-expanded="false" class="comment-toggle-btn text-indigo-600 text-sm font-semibold underline cursor-pointer">
+        💬 Comments (${comments.length})
+      </button>
+      <div class="comment-section hidden mt-2 space-y-2 max-h-48 overflow-auto border p-2 rounded bg-gray-50">
+        <div class="comments-list space-y-2 text-sm text-gray-800">
+          ${comments.length === 0 ? `<p class="italic text-gray-500">No comments yet.</p>` : comments.map((c, i) =>
+                `<div class="flex justify-between items-start" data-comment-index="${i}">
+              <div>
+                <strong>${escapeHtml(c.name)}</strong>:
+                ${escapeHtml(c.text)} <br />
+                <span class="text-xs text-gray-500">${timeAgo(c.timestamp)}</span>
+              </div>
+              ${isOwnProfile ? `<button class="delete-comment-btn text-red-500 hover:text-red-700 ml-2" title="Delete Comment" aria-label="Delete comment" data-comment-index="${i}">✖️</button>` : ''}
+            </div>`).join('')}
+        </div>
+        <!-- Removed add-comment-form to disable adding comments -->
+      </div>
+    </div>
+  `;
+
+            postsList.appendChild(postDiv);
+
+            if (isOwnProfile) {
+                // Attach Post Delete handler
+                postDiv.querySelector('.delete-post-btn')?.addEventListener('click', async () => {
+                    if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) return;
+                    try {
+                        await deleteDoc(doc(db, 'messages', postId));
+                        postDiv.remove();
+                    } catch (err) {
+                        alert('Failed to delete post: ' + err.message);
+                        console.error(err);
+                    }
+                });
+            }
+
+            // Attach comment toggle handler
+            const commentToggleBtn = postDiv.querySelector('.comment-toggle-btn');
+            const commentSection = postDiv.querySelector('.comment-section');
+            commentToggleBtn.addEventListener('click', () => {
+                const expanded = commentToggleBtn.getAttribute('aria-expanded') === 'true';
+                commentToggleBtn.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+                commentSection.classList.toggle('hidden');
+            });
+
+            // Attach delete comment handlers if viewing own profile
+            if (isOwnProfile) {
+                postDiv.querySelectorAll('.delete-comment-btn').forEach(btn => {
+                    const commentIndex = parseInt(btn.getAttribute('data-comment-index'));
+                    btn.addEventListener('click', async () => {
+                        await deleteComment(postId, commentIndex, postDiv);
+                    });
+                });
+            }
+        }
+
+        // Delete comment by index from array in Firestore and update UI
+        async function deleteComment(postId, commentIndex, postDiv) {
+            if (!confirm('Delete this comment? This action cannot be undone.')) return;
+
+            try {
+                // Get current comments array
+                const postRef = doc(db, 'messages', postId);
+                const postSnap = await getDoc(postRef);
+
+                if (!postSnap.exists()) {
+                    alert('Post no longer exists');
+                    return;
+                }
+
+                const comments = postSnap.data().comments || [];
+                if (commentIndex < 0 || commentIndex >= comments.length) {
+                    alert('Comment not found');
+                    return;
+                }
+
+                // Remove comment from array
+                const removedComment = comments[commentIndex];
+                const updatedComments = comments.filter((_, idx) => idx !== commentIndex);
+
+                // Update Firestore: replace comments array
+                await updateDoc(postRef, { comments: updatedComments });
+
+                // Update UI: remove comment div
+                const commentDiv = postDiv.querySelector(`.comments-list > div[data-comment-index="${commentIndex}"]`);
+                if (commentDiv) commentDiv.remove();
+
+                // Update comment count badge
+                const commentToggleBtn = postDiv.querySelector('.comment-toggle-btn');
+                const newCount = updatedComments.length;
+                commentToggleBtn.textContent = `💬 Comments (${newCount})`;
+
+                // If no comments left, show "No comments yet"
+                if (newCount === 0) {
+                    const commentsList = postDiv.querySelector('.comments-list');
+                    const noComMsg = document.createElement('p');
+                    noComMsg.className = 'italic text-gray-500';
+                    noComMsg.textContent = 'No comments yet.';
+                    commentsList.appendChild(noComMsg);
+                }
+
+                // Refresh comment indexes and delete buttons to prevent mismatch
+                refreshCommentIndexes(postDiv);
+
+            } catch (err) {
+                alert('Failed to delete comment: ' + err.message);
+                console.error(err);
+            }
+        }
+
+        // Helper to fix data-comment-index attributes and handlers after comment deletion
+        function refreshCommentIndexes(postDiv) {
+            const commentsList = postDiv.querySelector('.comments-list');
+            const commentDivs = Array.from(commentsList.querySelectorAll('div[data-comment-index]'));
+            commentDivs.forEach((div, i) => {
+                div.setAttribute('data-comment-index', i);
+                const delBtn = div.querySelector('.delete-comment-btn');
+                if (delBtn) {
+                    delBtn.setAttribute('data-comment-index', i);
+
+                    // Remove old listeners to avoid duplicates by cloning
+                    const oldBtn = delBtn;
+                    const newBtn = oldBtn.cloneNode(true);
+                    oldBtn.parentNode.replaceChild(newBtn, oldBtn);
+
+                    if (isOwnProfile) {
+                        newBtn.addEventListener('click', async () => {
+                            await deleteComment(postDiv.getAttribute('data-post-id'), i, postDiv);
+                        });
+                    }
+                }
+            });
+        }
+
+        // Render profile fields
+        function renderProfile(data) {
+            document.getElementById('name').textContent = data.name || '';
+            document.getElementById('email').textContent = data.email || '';
+            document.getElementById('mobile').textContent = data.mobile || '';
+            document.getElementById('gender').textContent = data.gender || '';
+            document.getElementById('age').textContent = data.age || '';
+            document.getElementById('address').textContent = data.address || '';
+            document.getElementById('about').textContent = data.about || '';
+        }
     </script>
 
 </body>

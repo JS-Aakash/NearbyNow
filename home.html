@@ -11,7 +11,7 @@
             theme: {
                 extend: {
                     animation: {
-                        fade: 'fadeIn 0.4s ease-in-out',
+                        fade: 'fadeIn 0.2s ease-in-out',
                     },
                     keyframes: {
                         fadeIn: {
@@ -30,7 +30,7 @@
     <!-- Sidebar -->
     <aside class="hidden md:flex md:flex-col bg-white w-52 p-6 shadow-lg space-y-6">
         <div class="flex items-center space-x-3">
-            <img src="profile.png" alt="Profile" class="w-11 h-11 rounded-full" />
+            <img src="Images/profile.png" alt="Profile" class="w-11 h-11 rounded-full" />
             <span class="text-lg font-bold">NearbyNow</span>
         </div>
         <nav class="space-y-5 text-base">
@@ -39,8 +39,9 @@
             <a href="notifications.html" class="flex items-center gap-2 hover:text-indigo-600 font-medium">
                 Notifications
             </a>
-            <a href="settings.html" class="flex items-center gap-2 hover:text-indigo-600 font-medium">Settings</a>
             <a href="profile.html" class="flex items-center gap-2 hover:text-indigo-600 font-medium">Profile</a>
+            <a href="settings.html" class="flex items-center gap-2 hover:text-indigo-600 font-medium">Settings</a>
+            <a href="index.html" class="flex items-center gap-2 hover:text-indigo-600 font-medium">Logout</a>
         </nav>
     </aside>
 
@@ -48,13 +49,26 @@
     <main class="flex-1 flex flex-col">
 
         <!-- Mobile Header -->
-        <header class="md:hidden bg-white p-4 flex justify-between items-center shadow">
-            <img src="profile.png" alt="" class="w-9 h-9 rounded-full" />
+        <header class="md:hidden bg-white p-4 flex justify-between items-center shadow relative">
+            <img src="Images/profile.png" alt="" class="w-9 h-9 rounded-full" />
             <h1 class="text-lg font-bold">NearbyNow</h1>
-            <button onclick="location.href='settings.html'"
-                class="text-gray-800 text-2xl p-2 rounded-full hover:bg-gray-200 transition duration-200"
-                title="Settings">⚙️</button>
+
+            <!-- Hamburger button -->
+            <button id="hamburgerBtn" aria-label="Menu" aria-expanded="false"
+                class="text-gray-800 text-3xl p-2 rounded-full hover:bg-gray-200 transition duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                &#9776; <!-- hamburger icon -->
+            </button>
+
+            <!-- Dropdown menu (hidden by default) -->
+            <div id="hamburgerMenu"
+                class="hidden absolute top-full right-4 mt-2 w-36 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                <a href="settings.html"
+                    class="block px-4 py-2 text-gray-700 hover:bg-indigo-600 hover:text-white rounded-t-lg">Settings</a>
+                <button id="logoutBtn"
+                    class="w-full text-left px-4 py-2 text-gray-700 hover:bg-indigo-600 hover:text-white rounded-b-lg">Logout</button>
+            </div>
         </header>
+
 
         <!-- Tabs -->
         <div class="bg-white flex justify-around text-sm font-semibold shadow">
@@ -78,7 +92,7 @@
             <div class="flex items-center gap-1 ml-auto">
                 <label for="distanceFilter"
                     class="text-sm font-medium whitespace-nowrap hidden sm:block">Distance:</label>
-                <input type="range" id="distanceFilter" min="0.1" max="10" step="0.1" value="1" class="w-28 sm:w-32" />
+                <input type="range" id="distanceFilter" min="0.1" max="20" step="0.1" value="1" class="w-28 sm:w-32" />
                 <span id="distanceValue" class="text-sm font-medium whitespace-nowrap">1 km</span>
             </div>
         </div>
@@ -106,20 +120,29 @@
         <!-- Mobile Nav -->
         <nav
             class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t shadow-inner flex justify-around py-2 text-indigo-700 text-xl font-semibold">
-            <a href="home.html" class="flex flex-col items-center gap-0.5">
-                <span class="text-2xl">🏠︎</span>
+
+            <a href="home.html" class="flex flex-col items-center gap-0.5" aria-label="Home">
+                <span class="text-2xl select-none">🏠︎</span>
                 <span class="text-sm">Home</span>
             </a>
-            
-            <a href="add-message.html" class="flex flex-col items-center gap-0.5">
-                <span class="text-2xl">➕</span>
-                <span class="text-sm">Post Message</span>
+
+            <a href="add-message.html" class="flex flex-col items-center gap-0.5" aria-label="Post Message">
+                <span class="text-2xl select-none">➕</span>
+                <span class="text-sm">Post</span>
             </a>
-            <a href="notifications.html" class="flex flex-col items-center gap-0.5">
-                <span class="text-2xl">✉︎</span>
-                <span class="text-sm">Notifications</span>
+
+            <a href="notifications.html" class="flex flex-col items-center gap-0.5" aria-label="Notifications">
+                <span class="text-2xl select-none">✉︎</span>
+                <span class="text-sm">Alerts</span>
             </a>
+
+            <a href="profile.html" class="flex flex-col items-center gap-0.5" aria-label="Profile">
+                <span class="text-2xl select-none">👤</span>
+                <span class="text-sm">Profile</span>
+            </a>
+
         </nav>
+
 
     </main>
 
@@ -154,6 +177,34 @@
 
         // To prevent multiple like clicks in progress per post
         const likeInProgress = new Set();
+        const hamburgerBtn = document.getElementById('hamburgerBtn');
+        const hamburgerMenu = document.getElementById('hamburgerMenu');
+        const logoutBtn = document.getElementById('logoutBtn');
+
+        // Toggle menu visibility
+        hamburgerBtn.addEventListener('click', () => {
+            const expanded = hamburgerBtn.getAttribute('aria-expanded') === 'true';
+            hamburgerBtn.setAttribute('aria-expanded', !expanded);
+            hamburgerMenu.classList.toggle('hidden');
+        });
+
+        // Close menu if clicking outside
+        document.addEventListener('click', (e) => {
+            if (!hamburgerMenu.contains(e.target) && e.target !== hamburgerBtn) {
+                hamburgerMenu.classList.add('hidden');
+                hamburgerBtn.setAttribute('aria-expanded', false);
+            }
+        });
+
+        // Handle logout button click (example with Firebase Auth)
+        logoutBtn.addEventListener('click', async () => {
+            try {
+                await auth.signOut();
+                window.location.href = 'index.html'; // redirect after logout
+            } catch (error) {
+                alert('Logout failed: ' + error.message);
+            }
+        });
 
         onAuthStateChanged(auth, async (user) => {
             if (!user) return location.href = 'index.html';
@@ -371,6 +422,7 @@
         }
 
         function attachHandlers() {
+            // Like button handler
             document.querySelectorAll('.like-btn').forEach(btn => {
                 btn.onclick = async () => {
                     const id = btn.dataset.id;
@@ -409,28 +461,35 @@
                 };
             });
 
+            // Comment toggle handler: toggle comment section and load fresh comments
             document.querySelectorAll('.comment-toggle').forEach(btn => {
                 btn.onclick = async () => {
                     const id = btn.dataset.id;
                     const section = document.querySelector(`.comment-section[data-id="${id}"]`);
                     section.classList.toggle('hidden');
+
                     if (!section.classList.contains('hidden')) {
+                        // Load fresh comments and focus input
                         const ref = doc(db, 'messages', id);
                         const snap = await getDoc(ref);
                         const comments = snap.data().comments || [];
                         const commentsEl = section.querySelector('.comments');
-                        commentsEl.innerHTML = comments.map(c => `<div><strong>${escapeHtml(c.name)}</strong>: ${escapeHtml(c.text)}</div>`).join('');
-                        section.querySelector('.comment-input').focus();
+                        commentsEl.innerHTML = comments.map(c =>
+                            `<div><strong>${escapeHtml(c.name)}</strong>: ${escapeHtml(c.text)}</div>`).join('');
+                        const input = section.querySelector('.comment-input');
+                        if (input) input.focus();
                     }
                 };
             });
 
+            // Send comment handler: post comment and refresh comments in section
             document.querySelectorAll('.send-comment').forEach(btn => {
                 btn.onclick = async () => {
                     const section = btn.closest('.comment-section');
                     const input = section.querySelector('.comment-input');
                     const text = input.value.trim();
                     const id = section.dataset.id;
+                    const commentToggleBtn = document.querySelector(`.comment-toggle[data-id="${id}"]`);
 
                     if (!text) return;
                     if (!userProfile || !userProfile.name) return location.href = 'profile.html';
@@ -446,22 +505,42 @@
                         await updateDoc(doc(db, 'messages', id), {
                             comments: arrayUnion(comment)
                         });
+
+                        input.value = '';
+
+                        // Reload comments display only for this section
+                        const ref = doc(db, 'messages', id);
+                        const snap = await getDoc(ref);
+                        const comments = snap.data().comments || [];
+                        const commentsEl = section.querySelector('.comments');
+                        commentsEl.innerHTML = comments.map(c =>
+                            `<div><strong>${escapeHtml(c.name)}</strong>: ${escapeHtml(c.text)}</div>`).join('');
+
+                        // Update comment count in the comment toggle button
+                        if (commentToggleBtn) {
+                            commentToggleBtn.textContent = `💬 Comments (${comments.length})`;
+                        }
+
+                        input.focus();
                     } catch (err) {
                         console.error("Error adding comment:", err);
+                        alert("Failed to post comment. Please try again.");
                     }
-
-                    input.value = '';
-                    fetchAndRender();
                 };
             });
 
+            // View Profile button handler: navigate to profile page with uid param
             document.querySelectorAll('.view-profile').forEach(btn => {
                 btn.onclick = (e) => {
                     e.preventDefault();
-                    location.href = `profile.html?uid=${btn.dataset.uid}`;
+                    const uid = btn.dataset.uid;
+                    if (uid) {
+                        location.href = `profile.html?uid=${uid}`;
+                    }
                 };
             });
         }
+
 
         function escapeHtml(text) {
             if (!text) return '';
