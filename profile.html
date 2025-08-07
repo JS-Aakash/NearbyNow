@@ -48,17 +48,29 @@
     <main class="flex-1 flex flex-col">
 
         <!-- Mobile Header -->
-        <header class="md:hidden bg-white p-4 flex justify-between items-center shadow">
-            <img src="Images/profile.png" class="w-9 h-9 rounded-full" alt="" />
+        <header class="md:hidden bg-white p-4 flex justify-between items-center shadow relative">
+            <img src="Images/profile.png" alt="" class="w-9 h-9 rounded-full" />
             <h1 class="text-lg font-bold">NearbyNow</h1>
-            <button onclick="location.href='settings.html'"
-                class="text-gray-800 text-2xl p-2 rounded-full hover:bg-gray-200 transition duration-200"
-                title="Settings">⚙️
+
+            <!-- Hamburger button -->
+            <button id="hamburgerBtn" aria-label="Menu" aria-expanded="false"
+                class="text-gray-800 text-3xl p-2 rounded-full hover:bg-gray-200 transition duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                &#9776; <!-- hamburger icon -->
             </button>
+
+            <!-- Dropdown menu (hidden by default) -->
+            <div id="hamburgerMenu"
+                class="hidden absolute top-full right-4 mt-2 w-36 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                <a href="settings.html"
+                    class="block px-4 py-2 text-gray-700 hover:bg-indigo-600 hover:text-white rounded-t-lg">Settings</a>
+                <button id="logoutBtn"
+                    class="w-full text-left px-4 py-2 text-gray-700 hover:bg-indigo-600 hover:text-white rounded-b-lg">Logout</button>
+            </div>
         </header>
 
         <!-- Profile Content -->
         <section class="p-4 max-w-2xl mx-auto w-full space-y-6 animate-fade">
+
 
             <!-- Profile View -->
             <div id="profileContainer" class="bg-white rounded-xl shadow p-6 space-y-6">
@@ -123,7 +135,8 @@
 
 
             <!-- User Posts -->
-            <section id="postsContainer" class="space-y-6">
+            <section id="postsContainer" class="space-y-6 pb-10">
+
                 <h3 class="text-xl font-semibold text-gray-800">Posts</h3>
                 <div id="postsList" class="space-y-4">
                     <!-- Posts will be appended here -->
@@ -134,26 +147,22 @@
 
         <!-- Mobile Navigation -->
         <nav
-            class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t shadow-inner flex justify-around py-2 text-indigo-700 text-xl font-semibold">
+            class="md:hidden fixed bottom-0 left-0 right-0 bg-white flex justify-around py-2 text-indigo-700 text-xl font-semibold z-50">
 
             <a href="home.html" class="flex flex-col items-center gap-0.5" aria-label="Home">
-                <span class="text-2xl select-none">🏠︎</span>
-                <span class="text-sm">Home</span>
+                <img src="Images/homebutton.png" alt="Home" class="h-7 w-7" />
             </a>
 
             <a href="add-message.html" class="flex flex-col items-center gap-0.5" aria-label="Post Message">
-                <span class="text-2xl select-none">➕</span>
-                <span class="text-sm">Post</span>
+                <img src="Images/4-49677_add-button-with-plus-symbol-in-a-black.png" alt="Post" class="h-7 w-7" />
             </a>
 
             <a href="notifications.html" class="flex flex-col items-center gap-0.5" aria-label="Notifications">
-                <span class="text-2xl select-none">✉︎</span>
-                <span class="text-sm">Alerts</span>
+                <img src="Images/notification-bell-black-11549537465xn5ekwdrj9.png" alt="Alerts" class="h-7 w-7" />
             </a>
 
             <a href="profile.html" class="flex flex-col items-center gap-0.5" aria-label="Profile">
-                <span class="text-2xl select-none">👤</span>
-                <span class="text-sm">Profile</span>
+                <img src="Images/c60ea00b55471c5a57ce5109dcd2f7df.png" alt="Profile" class="h-8 w-8" />
             </a>
 
         </nav>
@@ -168,7 +177,34 @@
             deleteDoc, updateDoc, arrayRemove
         } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
         import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+        const hamburgerBtn = document.getElementById('hamburgerBtn');
+        const hamburgerMenu = document.getElementById('hamburgerMenu');
+        const logoutBtn = document.getElementById('logoutBtn');
 
+        // Toggle menu visibility
+        hamburgerBtn.addEventListener('click', () => {
+            const expanded = hamburgerBtn.getAttribute('aria-expanded') === 'true';
+            hamburgerBtn.setAttribute('aria-expanded', !expanded);
+            hamburgerMenu.classList.toggle('hidden');
+        });
+
+        // Close menu if clicking outside
+        document.addEventListener('click', (e) => {
+            if (!hamburgerMenu.contains(e.target) && e.target !== hamburgerBtn) {
+                hamburgerMenu.classList.add('hidden');
+                hamburgerBtn.setAttribute('aria-expanded', false);
+            }
+        });
+
+        // Handle logout button click (example with Firebase Auth)
+        logoutBtn.addEventListener('click', async () => {
+            try {
+                await auth.signOut();
+                window.location.href = 'index.html'; // redirect after logout
+            } catch (error) {
+                alert('Logout failed: ' + error.message);
+            }
+        });
         // Utility: parse URL query params to get 'uid', if any
         function getQueryUid() {
             const params = new URLSearchParams(window.location.search);
