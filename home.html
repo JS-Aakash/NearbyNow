@@ -3,8 +3,8 @@
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Home | NearbyNow</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NearbyNow</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -26,32 +26,34 @@
 </head>
 
 <body class="bg-gray-100 min-h-screen flex flex-col md:flex-row">
+
     <!-- Sidebar -->
-    <aside class="hidden md:flex md:flex-col bg-white w-50 p-6 shadow-lg space-y-6">
+    <aside class="hidden md:flex md:flex-col bg-white w-52 p-6 shadow-lg space-y-6">
         <div class="flex items-center space-x-3">
-            <img src="profile.png" class="w-11 h-11 rounded-full" alt="Profile" />
+            <img src="profile.png" alt="Profile" class="w-11 h-11 rounded-full" />
             <span class="text-lg font-bold">NearbyNow</span>
         </div>
         <nav class="space-y-5 text-base">
             <a href="home.html" class="flex items-center gap-2 hover:text-indigo-600 font-medium">Home</a>
             <a href="add-message.html" class="flex items-center gap-2 hover:text-indigo-600 font-medium">Add Post</a>
             <a href="notifications.html" class="flex items-center gap-2 hover:text-indigo-600 font-medium">
-                Notifications</a>
+                Notifications
+            </a>
             <a href="settings.html" class="flex items-center gap-2 hover:text-indigo-600 font-medium">Settings</a>
+            <a href="profile.html" class="flex items-center gap-2 hover:text-indigo-600 font-medium">Profile</a>
         </nav>
     </aside>
 
     <!-- Main -->
     <main class="flex-1 flex flex-col">
+
         <!-- Mobile Header -->
         <header class="md:hidden bg-white p-4 flex justify-between items-center shadow">
-            <img src="profile.png" class="w-9 h-9 rounded-full" alt="" />
+            <img src="profile.png" alt="" class="w-9 h-9 rounded-full" />
             <h1 class="text-lg font-bold">NearbyNow</h1>
             <button onclick="location.href='settings.html'"
                 class="text-gray-800 text-2xl p-2 rounded-full hover:bg-gray-200 transition duration-200"
-                title="Settings">
-                ⚙️
-            </button>
+                title="Settings">⚙️</button>
         </header>
 
         <!-- Tabs -->
@@ -76,76 +78,160 @@
             <div class="flex items-center gap-1 ml-auto">
                 <label for="distanceFilter"
                     class="text-sm font-medium whitespace-nowrap hidden sm:block">Distance:</label>
-                <input type="range" id="distanceFilter" min="0.1" max="10" step="0.1" value="1" class="w-28 sm:w-32">
+                <input type="range" id="distanceFilter" min="0.1" max="10" step="0.1" value="1" class="w-28 sm:w-32" />
                 <span id="distanceValue" class="text-sm font-medium whitespace-nowrap">1 km</span>
             </div>
         </div>
+
+        <style>
+            #distanceValue {
+                display: inline-block;
+                min-width: 50px;
+                text-align: center;
+            }
+        </style>
 
         <!-- Location Error -->
         <div id="locationRetry" class="hidden text-center p-4 bg-yellow-100 text-yellow-800">
             This app needs location access.
             <button onclick="requestLocation()" class="ml-2 px-3 py-1 bg-yellow-300 rounded">Try Again</button>
         </div>
+
         <!-- Loading Indicator -->
         <div id="loading" class="text-center text-gray-500 py-6 hidden">Loading...</div>
 
-        <!-- Posts -->
+        <!-- Posts Feed -->
         <section id="postFeed" class="p-4 space-y-4 overflow-auto flex-1 pb-24 animate-fade"></section>
 
         <!-- Mobile Nav -->
         <nav
             class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t shadow-inner flex justify-around py-2 text-indigo-700 text-xl font-semibold">
-
             <a href="home.html" class="flex flex-col items-center gap-0.5">
                 <span class="text-2xl">🏠︎</span>
                 <span class="text-sm">Home</span>
             </a>
-
+            
             <a href="add-message.html" class="flex flex-col items-center gap-0.5">
                 <span class="text-2xl">➕</span>
                 <span class="text-sm">Post Message</span>
             </a>
-
             <a href="notifications.html" class="flex flex-col items-center gap-0.5">
                 <span class="text-2xl">✉︎</span>
                 <span class="text-sm">Notifications</span>
             </a>
-
         </nav>
 
     </main>
 
     <!-- Firebase + Script -->
     <script type="module">
-        import { db } from './firebase-config.js';
-        import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { db, auth } from './firebase-config.js';
+        import {
+            collection,
+            getDocs,
+            doc,
+            getDoc,
+            updateDoc,
+            arrayUnion,
+            arrayRemove
+        } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+        import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
+        // Globals
         let currentTab = "Messaging";
         let userLat = null, userLon = null;
+        let locationInitialized = false;
+        let currentUser = null, userProfile = null;
 
+        // DOM elements
         const msgTabBtn = document.getElementById("msgTab");
         const foodTabBtn = document.getElementById("foodTab");
         const categoryFilter = document.getElementById("categoryFilter");
         const distanceSlider = document.getElementById("distanceFilter");
         const distanceValue = document.getElementById("distanceValue");
         const postFeed = document.getElementById("postFeed");
+        const loadingEl = document.getElementById("loading");
+
+        // To prevent multiple like clicks in progress per post
+        const likeInProgress = new Set();
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) return location.href = 'index.html';
+            currentUser = user;
+
+            // Fetch user profile
+            const profileSnap = await getDoc(doc(db, 'profiles', user.uid));
+            if (!profileSnap.exists()) return location.href = 'profile.html';
+            userProfile = profileSnap.data();
+
+            // Request location or use cached one
+            requestLocation();
+        });
+
+        // Request geolocation or reuse cached location from sessionStorage
+        function requestLocation() {
+            loadingEl.classList.remove("hidden");
+
+            const storedLat = sessionStorage.getItem('userLat');
+            const storedLon = sessionStorage.getItem('userLon');
+
+            if (storedLat && storedLon) {
+                userLat = parseFloat(storedLat);
+                userLon = parseFloat(storedLon);
+                document.getElementById("locationRetry").classList.add("hidden");
+                loadingEl.classList.add("hidden");
+                if (!locationInitialized) {
+                    locationInitialized = true;
+                    fetchAndRender();
+                }
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    userLat = pos.coords.latitude;
+                    userLon = pos.coords.longitude;
+
+                    // Store in sessionStorage for reuse
+                    sessionStorage.setItem('userLat', userLat);
+                    sessionStorage.setItem('userLon', userLon);
+
+                    document.getElementById("locationRetry").classList.add("hidden");
+                    loadingEl.classList.add("hidden");
+                    if (!locationInitialized) {
+                        locationInitialized = true;
+                        fetchAndRender();
+                    }
+                },
+                () => {
+                    loadingEl.classList.add("hidden");
+                    document.getElementById("locationRetry").classList.remove("hidden");
+                }
+            );
+        }
 
         msgTabBtn.addEventListener("click", () => {
+            if (currentTab === "Messaging") return;
             currentTab = "Messaging";
             updateTabs();
             fetchAndRender();
         });
 
         foodTabBtn.addEventListener("click", () => {
+            if (currentTab === "Food Share") return;
             currentTab = "Food Share";
             updateTabs();
             fetchAndRender();
         });
 
         categoryFilter.addEventListener("change", fetchAndRender);
+
+        let distanceTimeout;
         distanceSlider.addEventListener("input", () => {
             distanceValue.textContent = `${distanceSlider.value} km`;
-            fetchAndRender();
+
+            clearTimeout(distanceTimeout);
+            distanceTimeout = setTimeout(fetchAndRender, 300);
         });
 
         function updateTabs() {
@@ -164,43 +250,23 @@
 
         function updateCategoryLabel() {
             [...categoryFilter.options].forEach(option => {
-                if (option.value === "All") {
-                    option.textContent = "Category: All";
-                } else {
-                    option.textContent = option.value;
-                }
+                option.textContent = option.value === "All" ? "Category: All" : option.value;
             });
         }
 
-        function requestLocation() {
-            const loadingEl = document.getElementById("loading");
-            loadingEl.classList.remove("hidden");
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    userLat = pos.coords.latitude;
-                    userLon = pos.coords.longitude;
-                    document.getElementById("locationRetry").classList.add("hidden");
-                    fetchAndRender();
-                },
-                () => {
-                    loadingEl.classList.add("hidden");
-                    document.getElementById("locationRetry").classList.remove("hidden");
-                }
-            );
-        }
-
-
+        // Calculate distance between two lat/lon points (km)
         function getDistance(lat1, lon1, lat2, lon2) {
             const R = 6371;
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const dLat = ((lat2 - lat1) * Math.PI) / 180;
+            const dLon = ((lon2 - lon1) * Math.PI) / 180;
             const a = Math.sin(dLat / 2) ** 2 +
-                Math.cos(lat1 * Math.PI / 180) *
-                Math.cos(lat2 * Math.PI / 180) *
+                Math.cos((lat1 * Math.PI) / 180) *
+                Math.cos((lat2 * Math.PI) / 180) *
                 Math.sin(dLon / 2) ** 2;
-            return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         }
 
+        // Format timestamp to "time ago"
         function timeAgo(timestamp) {
             if (!timestamp) return "just now";
             const seconds = Math.floor((Date.now() - timestamp) / 1000);
@@ -220,65 +286,199 @@
         }
 
         async function fetchAndRender() {
-            const loadingEl = document.getElementById("loading");
-            const postFeed = document.getElementById("postFeed");
-
-            loadingEl.classList.remove("hidden");
-            postFeed.innerHTML = "";
-
             if (userLat === null || userLon === null) {
-                requestLocation();
+                loadingEl.classList.add("hidden");
+                document.getElementById("locationRetry").classList.remove("hidden");
                 return;
             }
 
+            loadingEl.classList.remove("hidden");
+            postFeed.innerHTML = "";  // CLEAR post feed BEFORE rendering to prevent duplicates
+
             updateTabs();
+
             const maxUserDistance = parseFloat(distanceSlider.value);
+            const selectedCat = categoryFilter.value;
+
             const querySnap = await getDocs(collection(db, "messages"));
 
             const now = Date.now();
-            const selectedCat = categoryFilter.value;
             let shown = 0;
 
-            querySnap.forEach((doc) => {
-                const data = doc.data();
-                const expiry = Date.parse(data.expiresAt);
-                if (isNaN(expiry) || now > expiry) return;
+            for (const docSnap of querySnap.docs) {
+                const data = docSnap.data();
+
+                const expiry = data.expiresAt?.seconds ? data.expiresAt.seconds * 1000 : 0;
+                if (expiry && now > expiry) continue;
 
                 const dist = getDistance(userLat, userLon, data.latitude, data.longitude);
-                if (dist > (data.distance || 1) || dist > maxUserDistance) return;
+                if (dist > (data.distance || 1) || dist > maxUserDistance) continue;
 
-                if (currentTab === "Messaging" && data.category === "Food Share") return;
-                if (currentTab === "Food Share" && data.category !== "Food Share") return;
-                if (currentTab === "Messaging" && selectedCat !== "All" && data.category !== selectedCat) return;
+                if (currentTab === "Messaging" && data.category === "Food Share") continue;
+                if (currentTab === "Food Share" && data.category !== "Food Share") continue;
+                if (currentTab === "Messaging" && selectedCat !== "All" && data.category !== selectedCat) continue;
+
+                const profSnap = await getDoc(doc(db, "profiles", data.uid));
+                const author = profSnap.exists() ? profSnap.data() : { name: "Unknown User" };
+
+                const liked = data.likes?.includes(currentUser.uid);
 
                 const card = document.createElement("div");
-                card.className = "bg-white p-4 rounded-xl shadow hover:shadow-md transition animate-fade";
+                card.className = "bg-white p-4 rounded-xl shadow hover:shadow-md transition animate-fade space-y-3";
+
                 card.innerHTML = `
-            <h2 class="text-lg font-semibold text-gray-900 mb-1">${data.title}</h2>
-            <p class="text-gray-700 mb-2">${data.description}</p>
-            <div class="text-sm text-gray-500 flex justify-between">
-                <span>📍 ${data.customLocation || "Unknown location"}</span>
-                <span>⏱️ ${timeAgo(data.createdAt?.seconds * 1000)}</span>
-            </div>
-            <div class="text-xs text-indigo-500 mt-1">
-                ${data.category} • ${dist.toFixed(2)} km away • 
-                <a href="https://maps.google.com/?q=${data.latitude},${data.longitude}" target="_blank" class="underline">View Map</a>
-            </div>
-        `;
+        <div class="flex justify-between items-center">
+          <div>
+            <strong>${escapeHtml(author.name || "Unknown User")}</strong>
+            <button class="text-indigo-600 text-xs ml-2 view-profile" data-uid="${data.uid}">View Profile</button>
+          </div>
+          <button class="like-btn text-sm ${liked ? "text-red-500" : "text-gray-400"}" data-id="${docSnap.id}" aria-label="Like button">
+            ${liked ? "❤️" : "🤍"} ${data.likes?.length || 0}
+          </button>
+        </div>
+        <h2 class="text-lg font-semibold text-gray-900">${escapeHtml(data.title)}</h2>
+        <p class="text-gray-700">${escapeHtml(data.description)}</p>
+        <div class="text-sm text-gray-500 flex justify-between">
+          <span>📍 ${escapeHtml(data.customLocation || "Unknown location")}</span>
+          <span>⏱️ ${timeAgo(data.createdAt?.seconds * 1000)}</span>
+        </div>
+        <div class="text-xs text-indigo-500">
+          ${escapeHtml(data.category)} • ${dist.toFixed(2)} km away • 
+          <a href="https://maps.google.com/?q=${data.latitude},${data.longitude}" target="_blank" rel="noopener" class="underline">View Map</a>
+        </div>
+
+        <button class="comment-toggle mt-2 text-indigo-500 text-sm" data-id="${docSnap.id}">
+          💬 Comments (${data.comments?.length || 0})
+        </button>
+        <div class="comment-section hidden space-y-2 mt-2" data-id="${docSnap.id}">
+          <div class="comments max-h-40 overflow-auto text-sm space-y-2"></div>
+          <div class="flex gap-2 mt-2">
+            <input class="comment-input flex-1 border rounded px-2 py-1 text-sm" placeholder="Write a comment..." />
+            <button class="send-comment bg-indigo-600 text-white px-3 py-1 rounded text-sm">Send</button>
+          </div>
+        </div>
+      `;
                 postFeed.appendChild(card);
                 shown++;
-            });
+            }
 
             if (shown === 0) {
                 postFeed.innerHTML = `<div class="text-center text-gray-500 mt-10">No posts found for selected filters.</div>`;
             }
 
+            attachHandlers();
             loadingEl.classList.add("hidden");
         }
 
+        function attachHandlers() {
+            document.querySelectorAll('.like-btn').forEach(btn => {
+                btn.onclick = async () => {
+                    const id = btn.dataset.id;
 
-        requestLocation();
+                    if (likeInProgress.has(id)) return; // Ignore if updating in progress
+                    likeInProgress.add(id);
+
+                    if (!currentUser) {
+                        alert("Please login to like posts.");
+                        likeInProgress.delete(id);
+                        return;
+                    }
+
+                    try {
+                        const ref = doc(db, 'messages', id);
+                        const snap = await getDoc(ref);
+                        const d = snap.data();
+
+                        const userLiked = d.likes?.includes(currentUser.uid);
+                        const op = userLiked ? arrayRemove : arrayUnion;
+
+                        await updateDoc(ref, { likes: op(currentUser.uid) });
+
+                        // Optimistic UI update
+                        btn.classList.toggle("text-red-500", !userLiked);
+                        btn.classList.toggle("text-gray-400", userLiked);
+                        const updatedLikeCount = userLiked ? (d.likes.length - 1) : (d.likes.length + 1);
+                        btn.innerHTML = `${!userLiked ? '❤️' : '🤍'} ${updatedLikeCount}`;
+
+                    } catch (err) {
+                        console.error("Error updating likes:", err);
+                        alert("Failed to update like. Please try again.");
+                    } finally {
+                        likeInProgress.delete(id);
+                    }
+                };
+            });
+
+            document.querySelectorAll('.comment-toggle').forEach(btn => {
+                btn.onclick = async () => {
+                    const id = btn.dataset.id;
+                    const section = document.querySelector(`.comment-section[data-id="${id}"]`);
+                    section.classList.toggle('hidden');
+                    if (!section.classList.contains('hidden')) {
+                        const ref = doc(db, 'messages', id);
+                        const snap = await getDoc(ref);
+                        const comments = snap.data().comments || [];
+                        const commentsEl = section.querySelector('.comments');
+                        commentsEl.innerHTML = comments.map(c => `<div><strong>${escapeHtml(c.name)}</strong>: ${escapeHtml(c.text)}</div>`).join('');
+                        section.querySelector('.comment-input').focus();
+                    }
+                };
+            });
+
+            document.querySelectorAll('.send-comment').forEach(btn => {
+                btn.onclick = async () => {
+                    const section = btn.closest('.comment-section');
+                    const input = section.querySelector('.comment-input');
+                    const text = input.value.trim();
+                    const id = section.dataset.id;
+
+                    if (!text) return;
+                    if (!userProfile || !userProfile.name) return location.href = 'profile.html';
+
+                    const comment = {
+                        uid: currentUser.uid,
+                        name: userProfile.name,
+                        text: text,
+                        timestamp: Date.now()
+                    };
+
+                    try {
+                        await updateDoc(doc(db, 'messages', id), {
+                            comments: arrayUnion(comment)
+                        });
+                    } catch (err) {
+                        console.error("Error adding comment:", err);
+                    }
+
+                    input.value = '';
+                    fetchAndRender();
+                };
+            });
+
+            document.querySelectorAll('.view-profile').forEach(btn => {
+                btn.onclick = (e) => {
+                    e.preventDefault();
+                    location.href = `profile.html?uid=${btn.dataset.uid}`;
+                };
+            });
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text.replace(/[&<>"']/g, function (m) {
+                switch (m) {
+                    case '&': return '&amp;';
+                    case '<': return '&lt;';
+                    case '>': return '&gt;';
+                    case '"': return '&quot;';
+                    case "'": return '&#39;';
+                    default: return m;
+                }
+            });
+        }
     </script>
+
+
 </body>
 
 </html>

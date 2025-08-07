@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Profile | NearbyNow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    animation: {
+                        fade: "fadeIn 0.4s ease-in-out",
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            from: { opacity: 0 },
+                            to: { opacity: 1 },
+                        },
+                    },
+                },
+            },
+        };
+    </script>
+</head>
+
+<body class="bg-gray-100 min-h-screen flex flex-col md:flex-row">
+
+    <!-- Sidebar for desktop -->
+    <aside class="hidden md:flex md:flex-col bg-white w-50 p-6 shadow-lg space-y-6">
+        <div class="flex items-center space-x-3">
+            <img src="profile.png" class="w-11 h-11 rounded-full" alt="Profile" />
+            <span class="text-lg font-bold">NearbyNow</span>
+        </div>
+        <nav class="space-y-5 text-base">
+            <a href="home.html" class="flex items-center gap-2 hover:text-indigo-600 font-medium">Home</a>
+            <a href="add-message.html" class="flex items-center gap-2 hover:text-indigo-600 font-medium">Add Post</a>
+            <a href="notifications.html"
+                class="flex items-center gap-2 hover:text-indigo-600 font-medium">Notifications</a>
+            <a href="settings.html" class="flex items-center gap-2 hover:text-indigo-600 font-medium">Settings</a>
+        </nav>
+    </aside>
+
+    <!-- Main content -->
+    <main class="flex-1 flex flex-col">
+
+        <!-- Mobile Header -->
+        <header class="md:hidden bg-white p-4 flex justify-between items-center shadow">
+            <img src="profile.png" class="w-9 h-9 rounded-full" alt="" />
+            <h1 class="text-lg font-bold">NearbyNow</h1>
+            <button onclick="location.href='settings.html'"
+                class="text-gray-800 text-2xl p-2 rounded-full hover:bg-gray-200 transition duration-200"
+                title="Settings">⚙️
+            </button>
+        </header>
+
+        <!-- Profile Content -->
+        <section class="p-4 max-w-2xl mx-auto w-full space-y-6 animate-fade">
+
+            <!-- Profile View -->
+            <div id="profileContainer" class="hidden bg-white rounded-xl shadow p-6">
+                <div class="flex flex-col items-center space-y-4">
+                    <h2 id="name" class="text-2xl font-bold text-gray-800"></h2>
+                    <button id="editProfile"
+                        class="text-sm px-4 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700">
+                        Edit Profile
+                    </button>
+                </div>
+                <div class="mt-6 space-y-4 text-gray-700">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-sm font-semibold">Mobile</p>
+                            <p id="mobile" class="text-base"></p>
+                        </div>
+                        <div>
+                            <p class="text-sm font-semibold">Email</p>
+                            <p id="email" class="text-base"></p>
+                        </div>
+                        <div>
+                            <p class="text-sm font-semibold">Gender</p>
+                            <p id="gender" class="text-base"></p>
+                        </div>
+                        <div>
+                            <p class="text-sm font-semibold">Age</p>
+                            <p id="age" class="text-base"></p>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="text-sm font-semibold">Address</p>
+                        <p id="address" class="text-base"></p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-semibold">About</p>
+                        <p id="about" class="text-base"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Form -->
+            <div id="formContainer" class="hidden bg-white rounded-xl shadow p-6">
+                <h2 class="text-xl font-bold mb-4 text-gray-800">Fill your profile</h2>
+                <form id="profileForm" class="space-y-4">
+                    <input type="text" name="name" placeholder="Name" required class="w-full border p-2 rounded" />
+                    <input type="tel" name="mobile" placeholder="Mobile No" required
+                        class="w-full border p-2 rounded" />
+                    <select name="gender" required class="w-full border p-2 rounded">
+                        <option value="">Select Gender</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <input type="number" name="age" placeholder="Age" required class="w-full border p-2 rounded" />
+                    <input type="text" name="address" placeholder="Address" required
+                        class="w-full border p-2 rounded" />
+                    <textarea name="about" placeholder="About You" class="w-full border p-2 rounded"></textarea>
+                    <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700">Save
+                        Profile
+                    </button>
+                </form>
+            </div>
+
+        </section>
+
+        <!-- Mobile Navigation -->
+        <nav
+            class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t shadow-inner flex justify-around py-2 text-indigo-700 text-xl font-semibold">
+            <a href="home.html" class="flex flex-col items-center gap-0.5">
+                <span class="text-2xl">🏠︎</span>
+                <span class="text-sm">Home</span>
+            </a>
+            <a href="add-message.html" class="flex flex-col items-center gap-0.5">
+                <span class="text-2xl">➕</span>
+                <span class="text-sm">Post</span>
+            </a>
+            <a href="notifications.html" class="flex flex-col items-center gap-0.5">
+                <span class="text-2xl">✉︎</span>
+                <span class="text-sm">Alerts</span>
+            </a>
+        </nav>
+
+    </main>
+
+    <script type="module">
+        import { db, auth } from './firebase-config.js';
+        import { doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+        import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+        // Utility: parse URL query params to get 'uid', if any
+        function getQueryUid() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('uid');
+        }
+
+        const profileContainer = document.getElementById('profileContainer');
+        const formContainer = document.getElementById('formContainer');
+        const profileForm = document.getElementById('profileForm');
+        const editBtn = document.getElementById('editProfile');
+
+        let currentUser = null;
+        let viewingUid = null;
+        let isOwnProfile = false;
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = "index.html";
+                return;
+            }
+            currentUser = user;
+
+            // Determine which profile to show:
+            // If uid param absent or equals current user's uid -> own profile
+            // Else viewing someone else's profile
+            const uidFromQuery = getQueryUid();
+            if (!uidFromQuery || uidFromQuery === currentUser.uid) {
+                viewingUid = currentUser.uid;
+                isOwnProfile = true;
+            } else {
+                viewingUid = uidFromQuery;
+                isOwnProfile = false;
+            }
+
+            if (isOwnProfile) {
+                // Load current user's profile
+                const docRef = doc(db, 'profiles', viewingUid);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    renderProfile(docSnap.data());
+                } else {
+                    // No profile yet, show form to fill
+                    formContainer.classList.remove('hidden');
+                    profileContainer.classList.add('hidden');
+                }
+                // Show Edit button for own profile
+                editBtn.style.display = 'inline-block';
+            } else {
+                // Viewing other's profile - show their info, hide edit & form
+                const docRef = doc(db, 'profiles', viewingUid);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    renderProfile(docSnap.data());
+                } else {
+                    // If no profile found, show fallback message
+                    profileContainer.innerHTML = '<p class="text-center text-gray-500">Profile not found.</p>';
+                    profileContainer.classList.remove('hidden');
+                }
+                formContainer.classList.add('hidden');
+                profileContainer.classList.remove('hidden');
+
+                // Hide Edit Profile button for others' profiles
+                editBtn.style.display = 'none';
+
+                // Placeholder for future features on others' profile
+                // e.g., disable or hide any future controls here
+            }
+        });
+
+        profileForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (!isOwnProfile) return; // just in case
+
+            const data = {
+                name: profileForm.name.value.trim(),
+                mobile: profileForm.mobile.value.trim(),
+                email: currentUser.email,
+                gender: profileForm.gender.value,
+                age: profileForm.age.value,
+                address: profileForm.address.value.trim(),
+                about: profileForm.about.value.trim()
+            };
+
+            try {
+                await setDoc(doc(db, 'profiles', currentUser.uid), data);
+                renderProfile(data);
+            } catch (err) {
+                alert('Failed to save profile: ' + err.message);
+                console.error(err);
+            }
+        });
+
+        function renderProfile(data) {
+            document.getElementById('name').textContent = data.name || '';
+            document.getElementById('email').textContent = data.email || '';
+            document.getElementById('mobile').textContent = data.mobile || '';
+            document.getElementById('gender').textContent = data.gender || '';
+            document.getElementById('age').textContent = data.age || '';
+            document.getElementById('address').textContent = data.address || '';
+            document.getElementById('about').textContent = data.about || '';
+
+            formContainer.classList.add('hidden');
+            profileContainer.classList.remove('hidden');
+        }
+
+        editBtn.addEventListener('click', async () => {
+            if (!isOwnProfile) return;
+
+            try {
+                const docSnap = await getDoc(doc(db, 'profiles', currentUser.uid));
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    profileForm.name.value = data.name || '';
+                    profileForm.mobile.value = data.mobile || '';
+                    profileForm.gender.value = data.gender || '';
+                    profileForm.age.value = data.age || '';
+                    profileForm.address.value = data.address || '';
+                    profileForm.about.value = data.about || '';
+                    formContainer.classList.remove('hidden');
+                    profileContainer.classList.add('hidden');
+                }
+            } catch (err) {
+                alert('Failed to load profile for editing: ' + err.message);
+                console.error(err);
+            }
+        });
+    </script>
+
+</body>
+
+</html>

@@ -72,8 +72,12 @@
                     Message</button>
             </form>
 
-            <p id="posting" class="text-center mt-4 text-blue-600 font-medium hidden">Posting message...</p>
+            <p id="posting" class="text-center mt-4 text-blue-600 font-medium hidden">
+                <span class="animate-pulse">📤 Posting message...</span>
+            </p>
             <p id="status" class="text-center mt-2 text-green-600 font-medium hidden">Message posted!</p>
+            <p id="error" class="text-center mt-2 text-red-600 font-medium hidden">Failed to post. Try again.</p>
+
         </div>
     </main>
 
@@ -101,38 +105,70 @@
     <!-- Firebase & JS -->
     <script type="module">
         import { db, auth } from './firebase-config.js';
-        import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { collection, addDoc, serverTimestamp, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
         const form = document.getElementById('messageForm');
         const status = document.getElementById('status');
         const posting = document.getElementById('posting');
+        const error = document.getElementById('error');
 
         let currentUser = null;
         let cachedLocation = null;
 
-        function requestLocation() {
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    cachedLocation = pos.coords;
-                },
-                (err) => {
-                    alert("Location permission is required to post messages.");
-                }
-            );
+        // Try loading cached location from sessionStorage
+        function loadCachedLocation() {
+            const lat = sessionStorage.getItem('userLat');
+            const lon = sessionStorage.getItem('userLon');
+            if (lat && lon) {
+                cachedLocation = {
+                    latitude: parseFloat(lat),
+                    longitude: parseFloat(lon)
+                };
+                return true;
+            }
+            return false;
         }
 
-        onAuthStateChanged(auth, (user) => {
+        // If no cached location, request location once and save to sessionStorage
+        function requestLocationOnce() {
+            return new Promise((resolve, reject) => {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        cachedLocation = pos.coords;
+                        sessionStorage.setItem('userLat', cachedLocation.latitude);
+                        sessionStorage.setItem('userLon', cachedLocation.longitude);
+                        resolve();
+                    },
+                    (err) => {
+                        reject("Location permission is required to post messages.");
+                    }
+                );
+            });
+        }
+
+        onAuthStateChanged(auth, async (user) => {
             if (!user) {
                 window.location.href = "index.html";
-            } else {
-                currentUser = user;
-                requestLocation();
+                return;
+            }
+            currentUser = user;
+
+            // Try to load cached location first
+            if (!loadCachedLocation()) {
+                // If missing, request once and cache it
+                try {
+                    await requestLocationOnce();
+                } catch (errMsg) {
+                    alert(errMsg);
+                }
             }
         });
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
+            error.classList.add("hidden");
+            status.classList.add("hidden");
 
             const title = form.title.value.trim();
             const description = form.description.value.trim();
@@ -141,19 +177,27 @@
             const expiry = parseInt(form.expiry.value);
             const category = form.category.value;
 
-            if (!title || !description || !category) return;
+            if (!title || !description || !category) {
+                alert("Please fill in all required fields.");
+                return;
+            }
             if (distance > 10 || expiry > 24 || distance < 0.1 || expiry < 1) {
-                alert("Max distance is 10km and max time is 24 hours.");
+                alert("Max distance is 10km and max expiry time is 24 hours.");
                 return;
             }
             if (!cachedLocation) {
-                alert("Getting your location. Please wait and try again.");
+                alert("Getting your location. Please wait a moment and try again.");
+                // Optionally trigger location request here again:
+                try {
+                    await requestLocationOnce();
+                } catch (errMsg) {
+                    alert(errMsg);
+                }
                 return;
             }
 
             try {
                 posting.classList.remove("hidden");
-                const expiresAt = new Date(Date.now() + expiry * 3600 * 1000);
 
                 await addDoc(collection(db, "messages"), {
                     uid: currentUser.uid,
@@ -164,8 +208,10 @@
                     longitude: cachedLocation.longitude,
                     category,
                     distance,
+                    likes: [],
+                    comments: [],
                     createdAt: serverTimestamp(),
-                    expiresAt: expiresAt.toISOString()
+                    expiresAt: Timestamp.fromDate(new Date(Date.now() + expiry * 3600 * 1000))
                 });
 
                 form.reset();
@@ -174,12 +220,14 @@
 
                 setTimeout(() => status.classList.add("hidden"), 3000);
             } catch (err) {
-                console.error("Post error:", err);
                 posting.classList.add("hidden");
-                alert("Failed to post. Try again.");
+                error.classList.remove("hidden");
+                setTimeout(() => error.classList.add("hidden"), 4000);
+                console.error("Error posting message:", err);
             }
         });
     </script>
+
 </body>
 
 </html>
