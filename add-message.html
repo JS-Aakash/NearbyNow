@@ -6,6 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Add Message | NearbyNow</title>
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- EmailJS SDK v4 (latest) loaded as normal script -->
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
 
 <body class="bg-gray-100 text-gray-800 flex flex-col md:flex-row min-h-screen">
@@ -19,8 +22,8 @@
         <nav class="space-y-5 text-base">
             <a href="home.html" class="flex items-center gap-2 hover:text-indigo-600 font-medium">Home</a>
             <a href="add-message.html" class="flex items-center gap-2 hover:text-indigo-600 font-medium">Add Post</a>
-            <a href="notifications.html" class="flex items-center gap-2 hover:text-indigo-600 font-medium">
-                Notifications</a>
+            <a href="notifications.html"
+                class="flex items-center gap-2 hover:text-indigo-600 font-medium">Notifications</a>
             <a href="profile.html" class="flex items-center gap-2 hover:text-indigo-600 font-medium">Profile</a>
             <a href="settings.html" class="flex items-center gap-2 hover:text-indigo-600 font-medium">Settings</a>
             <a href="index.html" class="flex items-center gap-2 hover:text-indigo-600 font-medium">Logout</a>
@@ -85,12 +88,10 @@
                     Message</button>
             </form>
 
-            <p id="posting" class="text-center mt-4 text-blue-600 font-medium hidden">
-                <span class="animate-pulse">📤 Posting message...</span>
-            </p>
+            <p id="posting" class="text-center mt-4 text-blue-600 font-medium hidden"><span class="animate-pulse">📤
+                    Posting message...</span></p>
             <p id="status" class="text-center mt-2 text-green-600 font-medium hidden">Message posted!</p>
             <p id="error" class="text-center mt-2 text-red-600 font-medium hidden">Failed to post. Try again.</p>
-
         </div>
     </main>
 
@@ -118,8 +119,23 @@
     <!-- Firebase & JS -->
     <script type="module">
         import { db, auth } from './firebase-config.js';
-        import { collection, addDoc, serverTimestamp, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import {
+            collection,
+            addDoc,
+            serverTimestamp,
+            Timestamp,
+            doc,
+            getDoc,
+            getDocs
+        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+
+        // Initialize EmailJS Public Key globally (emailjs is loaded as a global script)
+        emailjs.init("F8YJAVO_mmfS3h3Gz");
+
+        const EMAILJS_SERVICE_ID = "service_ywz50ea";
+        const EMAILJS_TEMPLATE_ID = "template_ggzqzcl";
 
         const form = document.getElementById('messageForm');
         const status = document.getElementById('status');
@@ -127,6 +143,7 @@
         const error = document.getElementById('error');
 
         let currentUser = null;
+        let userName = null; // Will hold name fetched from profiles collection
         let cachedLocation = null;
         const hamburgerBtn = document.getElementById('hamburgerBtn');
         const hamburgerMenu = document.getElementById('hamburgerMenu');
@@ -147,7 +164,7 @@
             }
         });
 
-        // Handle logout button click (example with Firebase Auth)
+        // Logout handler
         logoutBtn.addEventListener('click', async () => {
             try {
                 await auth.signOut();
@@ -156,7 +173,8 @@
                 alert('Logout failed: ' + error.message);
             }
         });
-        // Try loading cached location from sessionStorage
+
+        // Load location from sessionStorage
         function loadCachedLocation() {
             const lat = sessionStorage.getItem('userLat');
             const lon = sessionStorage.getItem('userLon');
@@ -170,7 +188,7 @@
             return false;
         }
 
-        // If no cached location, request location once and save to sessionStorage
+        // Request location once and cache it
         function requestLocationOnce() {
             return new Promise((resolve, reject) => {
                 navigator.geolocation.getCurrentPosition(
@@ -187,6 +205,88 @@
             });
         }
 
+        // Calculate distance between two lat/lon points in km using Haversine formula
+        function getDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Radius of earth in km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a =
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        }
+
+        // Fetch the user name from profiles collection by UID
+        async function fetchUserName(uid) {
+            try {
+                const profileDocRef = doc(db, 'profiles', uid);
+                const profileDocSnap = await getDoc(profileDocRef);
+                if (profileDocSnap.exists()) {
+                    return profileDocSnap.data().name || "Anonymous";
+                } else {
+                    return "Anonymous";
+                }
+            } catch (err) {
+                console.error("Error fetching user profile name:", err);
+                return "Anonymous";
+            }
+        }
+
+
+        // Send email only to users within distance
+        async function sendEmailToAll(name, title, description, category, messageCoords, maxDistanceKm, customLocationStr) {
+            try {
+                const profilesSnapshot = await getDocs(collection(db, 'profiles'));
+                const emailPromises = [];
+
+                profilesSnapshot.forEach(profileDoc => {
+                    const profileData = profileDoc.data();
+                    const recipientEmail = profileData.email;
+                    const profileUid = profileDoc.id;
+
+                    // Skip sender
+                    if (profileUid === currentUser.uid) return;
+
+                    // Ensure valid coordinates to calculate distance
+                    if (recipientEmail && profileData.latitude !== undefined && profileData.longitude !== undefined) {
+                        const dist = getDistance(
+                            messageCoords.latitude,
+                            messageCoords.longitude,
+                            profileData.latitude,
+                            profileData.longitude
+                        );
+
+                        if (dist <= maxDistanceKm) {
+                            const templateParams = {
+                                to_email: recipientEmail,
+                                name: name,
+                                email: recipientEmail,
+                                message_title: title,
+                                message_description: description,
+                                Category: category
+                            };
+
+                            emailPromises.push(
+                                emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
+                                    .catch(err => {
+                                        console.error("Failed to send email to", recipientEmail, err);
+                                    })
+                            );
+                        }
+                    }
+                });
+
+                await Promise.all(emailPromises);
+                console.log("Emails sent successfully to all in range except sender.");
+            } catch (err) {
+                console.error("Error sending emails:", err);
+            }
+        }
+
+
+
+
         onAuthStateChanged(auth, async (user) => {
             if (!user) {
                 window.location.href = "index.html";
@@ -194,9 +294,10 @@
             }
             currentUser = user;
 
-            // Try to load cached location first
+            // Fetch the user name after login
+            userName = await fetchUserName(currentUser.uid);
+
             if (!loadCachedLocation()) {
-                // If missing, request once and cache it
                 try {
                     await requestLocationOnce();
                 } catch (errMsg) {
@@ -226,8 +327,7 @@
                 return;
             }
             if (!cachedLocation) {
-                alert("Getting your location. Please wait a moment and try again.");
-                // Optionally trigger location request here again:
+                alert("Getting your location. Please wait and try again.");
                 try {
                     await requestLocationOnce();
                 } catch (errMsg) {
@@ -241,6 +341,7 @@
 
                 await addDoc(collection(db, "messages"), {
                     uid: currentUser.uid,
+                    authorName: userName,
                     title,
                     description,
                     customLocation,
@@ -253,6 +354,9 @@
                     createdAt: serverTimestamp(),
                     expiresAt: Timestamp.fromDate(new Date(Date.now() + expiry * 3600 * 1000))
                 });
+
+                // Send email only to users who were within the visible distance range
+                await sendEmailToAll(userName, title, description, category, cachedLocation, distance, customLocation);
 
                 form.reset();
                 posting.classList.add("hidden");

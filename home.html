@@ -36,9 +36,8 @@
         <nav class="space-y-5 text-base">
             <a href="home.html" class="flex items-center gap-2 hover:text-indigo-600 font-medium">Home</a>
             <a href="add-message.html" class="flex items-center gap-2 hover:text-indigo-600 font-medium">Add Post</a>
-            <a href="notifications.html" class="flex items-center gap-2 hover:text-indigo-600 font-medium">
-                Notifications
-            </a>
+            <a href="notifications.html"
+                class="flex items-center gap-2 hover:text-indigo-600 font-medium">Notifications</a>
             <a href="profile.html" class="flex items-center gap-2 hover:text-indigo-600 font-medium">Profile</a>
             <a href="settings.html" class="flex items-center gap-2 hover:text-indigo-600 font-medium">Settings</a>
             <a href="index.html" class="flex items-center gap-2 hover:text-indigo-600 font-medium">Logout</a>
@@ -59,7 +58,7 @@
                 &#9776; <!-- hamburger icon -->
             </button>
 
-            <!-- Dropdown menu (hidden by default) -->
+            <!-- Dropdown menu -->
             <div id="hamburgerMenu"
                 class="hidden absolute top-full right-4 mt-2 w-36 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
                 <a href="settings.html"
@@ -69,13 +68,13 @@
             </div>
         </header>
 
-
         <!-- Tabs -->
         <div class="bg-white flex justify-around text-sm font-semibold shadow">
-            <button id="msgTab" class="tab-btn py-3 w-1/2 border-b-4 border-indigo-500 text-gray-900 transition">Nearby
+            <button id="msgTab" type="button"
+                class="tab-btn py-3 w-1/2 border-b-4 border-indigo-500 text-gray-900 transition">Nearby
                 Messaging</button>
-            <button id="foodTab" class="tab-btn py-3 w-1/2 border-b-4 border-transparent text-gray-600 transition">Food
-                Share</button>
+            <button id="foodTab" type="button"
+                class="tab-btn py-3 w-1/2 border-b-4 border-transparent text-gray-600 transition">Food Share</button>
         </div>
 
         <!-- Filters -->
@@ -105,10 +104,16 @@
             }
         </style>
 
-        <!-- Location Error -->
-        <div id="locationRetry" class="hidden text-center p-4 bg-yellow-100 text-yellow-800">
-            This app needs location access.
-            <button onclick="requestLocation()" class="ml-2 px-3 py-1 bg-yellow-300 rounded">Try Again</button>
+        <!-- Location Error / Permission Dialog -->
+        <div id="locationRetry"
+            class="hidden max-w-md mx-auto mt-6 p-5 bg-yellow-100 text-yellow-900 rounded-lg shadow-lg text-center select-none">
+            <p class="mb-4 text-lg font-semibold">Location Access Required</p>
+            <p class="mb-4">NearbyNow requires access to your location to function properly. Please enable location
+                permissions in your browser settings.</p>
+            <button id="tryAgainBtn"
+                class="px-5 py-2 bg-yellow-400 text-yellow-900 font-semibold rounded-md hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-600 focus:ring-offset-1">
+                Enable Location & Retry
+            </button>
         </div>
 
         <!-- Loading Indicator -->
@@ -138,8 +143,6 @@
 
         </nav>
 
-
-
     </main>
 
     <!-- Firebase + Script -->
@@ -147,12 +150,12 @@
         import { db, auth } from './firebase-config.js';
         import {
             collection,
-            getDocs,
             doc,
             getDoc,
             updateDoc,
             arrayUnion,
-            arrayRemove
+            arrayRemove,
+            onSnapshot
         } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
         import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
@@ -161,6 +164,8 @@
         let userLat = null, userLon = null;
         let locationInitialized = false;
         let currentUser = null, userProfile = null;
+        let cachedMessagesData = [];
+        const likeInProgress = new Set();
 
         // DOM elements
         const msgTabBtn = document.getElementById("msgTab");
@@ -170,150 +175,172 @@
         const distanceValue = document.getElementById("distanceValue");
         const postFeed = document.getElementById("postFeed");
         const loadingEl = document.getElementById("loading");
-
-        // To prevent multiple like clicks in progress per post
-        const likeInProgress = new Set();
+        const locationRetry = document.getElementById("locationRetry");
+        const tryAgainBtn = document.getElementById("tryAgainBtn");
         const hamburgerBtn = document.getElementById('hamburgerBtn');
         const hamburgerMenu = document.getElementById('hamburgerMenu');
         const logoutBtn = document.getElementById('logoutBtn');
 
-        // Toggle menu visibility
+        let unsubscribeMessages = null;
+
+        // --------- Handle full reload detection for all browsers ----------
+        let isReload = false;
+        if (
+            (performance.getEntriesByType && performance.getEntriesByType("navigation")[0]?.type === "reload") ||
+            (performance.navigation && performance.navigation.type === 1)
+        ) {
+            isReload = true;
+        }
+        // -----------------------------------------------------------------
+
+        // Hamburger menu toggle handlers
         hamburgerBtn.addEventListener('click', () => {
             const expanded = hamburgerBtn.getAttribute('aria-expanded') === 'true';
             hamburgerBtn.setAttribute('aria-expanded', !expanded);
             hamburgerMenu.classList.toggle('hidden');
         });
-
-        // Close menu if clicking outside
-        document.addEventListener('click', (e) => {
+        document.addEventListener('click', e => {
             if (!hamburgerMenu.contains(e.target) && e.target !== hamburgerBtn) {
                 hamburgerMenu.classList.add('hidden');
                 hamburgerBtn.setAttribute('aria-expanded', false);
             }
         });
-
-        // Handle logout button click (example with Firebase Auth)
         logoutBtn.addEventListener('click', async () => {
             try {
                 await auth.signOut();
-                window.location.href = 'index.html'; // redirect after logout
+                window.location.href = 'index.html';
             } catch (error) {
                 alert('Logout failed: ' + error.message);
             }
         });
 
-        onAuthStateChanged(auth, async (user) => {
-            if (!user) return location.href = 'index.html';
-            currentUser = user;
+        // --------- Location logic: clear cache & get new coords only on reload ---------
+        async function getUserLocationIfNeeded() {
+            // On reload (includes swipe/pull-to-refresh), clear stored coords to force prompt
+            if (isReload) {
+                sessionStorage.removeItem('userLat');
+                sessionStorage.removeItem('userLon');
+            }
+            // Otherwise, only prompt if not cached in this session
+            const lat = sessionStorage.getItem('userLat');
+            const lon = sessionStorage.getItem('userLon');
+            if (lat && lon) {
+                userLat = parseFloat(lat);
+                userLon = parseFloat(lon);
+                locationInitialized = true;
+                startListeningMessages();
+            } else {
+                await requestLocation();
+            }
+        }
 
-            // Fetch user profile
-            const profileSnap = await getDoc(doc(db, 'profiles', user.uid));
-            if (!profileSnap.exists()) return location.href = 'profile.html';
-            userProfile = profileSnap.data();
-
-            // Request location or use cached one
-            requestLocation();
-        });
-
-        // Request geolocation or reuse cached location from sessionStorage
-        function requestLocation() {
+        async function requestLocation() {
             loadingEl.classList.remove("hidden");
+            locationRetry.classList.add("hidden");
+            postFeed.classList.add("opacity-40", "pointer-events-none");
 
-            const storedLat = sessionStorage.getItem('userLat');
-            const storedLon = sessionStorage.getItem('userLon');
-
-            if (storedLat && storedLon) {
-                userLat = parseFloat(storedLat);
-                userLon = parseFloat(storedLon);
-                document.getElementById("locationRetry").classList.add("hidden");
-                loadingEl.classList.add("hidden");
-                if (!locationInitialized) {
-                    locationInitialized = true;
-                    fetchAndRender();
+            async function checkPermissionStatus() {
+                if (navigator.permissions) {
+                    try {
+                        const permissionStatus = await navigator.permissions.query({ name: 'geolocation' });
+                        if (permissionStatus.state === 'granted' || permissionStatus.state === 'prompt') {
+                            return await getLocation();
+                        } else if (permissionStatus.state === 'denied') {
+                            await showPermissionUI();
+                            return await checkPermissionStatus();
+                        }
+                        permissionStatus.onchange = () => {
+                            if (permissionStatus.state === 'granted') {
+                                getLocation();
+                            }
+                        };
+                    } catch {
+                        return await getLocation();
+                    }
+                } else {
+                    return await getLocation();
                 }
+            }
+
+            function getLocation() {
+                return new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(
+                        async (pos) => {
+                            userLat = pos.coords.latitude;
+                            userLon = pos.coords.longitude;
+                            sessionStorage.setItem("userLat", userLat);
+                            sessionStorage.setItem("userLon", userLon);
+
+                            locationRetry.classList.add("hidden");
+                            loadingEl.classList.add("hidden");
+                            postFeed.classList.remove("opacity-40", "pointer-events-none");
+                            // If first load, start listening Firestore
+                            if (!locationInitialized) {
+                                locationInitialized = true;
+                                startListeningMessages();
+                            } else {
+                                // If refreshing location mid-session, rerender
+                                renderMessages(cachedMessagesData);
+                            }
+                            resolve();
+                        },
+                        async (err) => {
+                            if (err.code === err.PERMISSION_DENIED) {
+                                await showPermissionUI();
+                                resolve(await checkPermissionStatus());
+                            } else {
+                                alert("Error retrieving location: " + err.message);
+                                reject(err);
+                            }
+                        }
+                    );
+                });
+            }
+            function showPermissionUI() {
+                return new Promise((resolve) => {
+                    locationRetry.classList.remove("hidden");
+                    tryAgainBtn.onclick = () => {
+                        locationRetry.classList.add("hidden");
+                        loadingEl.classList.remove("hidden");
+                        resolve();
+                    };
+                    tryAgainBtn.focus();
+                });
+            }
+            await checkPermissionStatus();
+        }
+
+        // ----------------- Firebase Auth, location and Firestore start-up -----------------
+        onAuthStateChanged(auth, async user => {
+            if (!user) {
+                window.location.href = "index.html";
                 return;
             }
-
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    userLat = pos.coords.latitude;
-                    userLon = pos.coords.longitude;
-
-                    // Store in sessionStorage for reuse
-                    sessionStorage.setItem('userLat', userLat);
-                    sessionStorage.setItem('userLon', userLon);
-
-                    document.getElementById("locationRetry").classList.add("hidden");
-                    loadingEl.classList.add("hidden");
-                    if (!locationInitialized) {
-                        locationInitialized = true;
-                        fetchAndRender();
-                    }
-                },
-                () => {
-                    loadingEl.classList.add("hidden");
-                    document.getElementById("locationRetry").classList.remove("hidden");
+            currentUser = user;
+            try {
+                const profileSnap = await getDoc(doc(db, 'profiles', user.uid));
+                if (!profileSnap.exists()) {
+                    return window.location.href = 'profile.html';
                 }
-            );
-        }
-
-        msgTabBtn.addEventListener("click", () => {
-            if (currentTab === "Messaging") return;
-            currentTab = "Messaging";
-            updateTabs();
-            fetchAndRender();
-        });
-
-        foodTabBtn.addEventListener("click", () => {
-            if (currentTab === "Food Share") return;
-            currentTab = "Food Share";
-            updateTabs();
-            fetchAndRender();
-        });
-
-        categoryFilter.addEventListener("change", fetchAndRender);
-
-        let distanceTimeout;
-        distanceSlider.addEventListener("input", () => {
-            distanceValue.textContent = `${distanceSlider.value} km`;
-
-            clearTimeout(distanceTimeout);
-            distanceTimeout = setTimeout(fetchAndRender, 300);
-        });
-
-        function updateTabs() {
-            msgTabBtn.classList.toggle("border-indigo-500", currentTab === "Messaging");
-            msgTabBtn.classList.toggle("border-transparent", currentTab !== "Messaging");
-            foodTabBtn.classList.toggle("border-indigo-500", currentTab === "Food Share");
-            foodTabBtn.classList.toggle("border-transparent", currentTab !== "Food Share");
-
-            if (currentTab === "Messaging") {
-                categoryFilter.classList.remove("hidden");
-                updateCategoryLabel();
-            } else {
-                categoryFilter.classList.add("hidden");
+                userProfile = profileSnap.data();
+            } catch {
+                return window.location.href = 'profile.html';
             }
-        }
+            await getUserLocationIfNeeded();
+        });
 
-        function updateCategoryLabel() {
-            [...categoryFilter.options].forEach(option => {
-                option.textContent = option.value === "All" ? "Category: All" : option.value;
-            });
-        }
-
-        // Calculate distance between two lat/lon points (km)
+        // ----------------- Core functions for feed and UI below -----------------
         function getDistance(lat1, lon1, lat2, lon2) {
             const R = 6371;
             const dLat = ((lat2 - lat1) * Math.PI) / 180;
             const dLon = ((lon2 - lon1) * Math.PI) / 180;
-            const a = Math.sin(dLat / 2) ** 2 +
+            const a =
+                Math.sin(dLat / 2) ** 2 +
                 Math.cos((lat1 * Math.PI) / 180) *
                 Math.cos((lat2 * Math.PI) / 180) *
                 Math.sin(dLon / 2) ** 2;
             return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         }
-
-        // Format timestamp to "time ago"
         function timeAgo(timestamp) {
             if (!timestamp) return "just now";
             const seconds = Math.floor((Date.now() - timestamp) / 1000);
@@ -331,56 +358,86 @@
             }
             return "just now";
         }
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text.replace(/[&<>"']/g, m => {
+                switch (m) {
+                    case '&': return '&amp;';
+                    case '<': return '&lt;';
+                    case '>': return '&gt;';
+                    case '"': return '&quot;';
+                    case "'": return '&#39;';
+                    default: return m;
+                }
+            });
+        }
 
-        async function fetchAndRender() {
+        function startListeningMessages() {
+            if (unsubscribeMessages) unsubscribeMessages();
+            loadingEl.classList.remove("hidden");
+            postFeed.innerHTML = "";
+
+            const messagesCol = collection(db, "messages");
+            unsubscribeMessages = onSnapshot(
+                messagesCol,
+                (querySnapshot) => {
+                    cachedMessagesData = querySnapshot.docs.map(docSnap => ({
+                        id: docSnap.id,
+                        ...docSnap.data()
+                    }));
+                    renderMessages(cachedMessagesData);
+                    loadingEl.classList.add("hidden");
+                },
+                error => {
+                    console.error("Error in real-time listener:", error);
+                    loadingEl.classList.add("hidden");
+                    postFeed.innerHTML = `<div class="text-center text-red-500 mt-10">Failed to load posts. Please try again later.</div>`;
+                }
+            );
+        }
+
+        function renderMessages(messages) {
             if (userLat === null || userLon === null) {
-                loadingEl.classList.add("hidden");
-                document.getElementById("locationRetry").classList.remove("hidden");
+                postFeed.innerHTML = '<div class="text-center text-yellow-600 mt-10">Location required to view posts.</div>';
                 return;
             }
-
-            loadingEl.classList.remove("hidden");
-            postFeed.innerHTML = "";  // CLEAR post feed BEFORE rendering to prevent duplicates
-
+            postFeed.innerHTML = "";
             updateTabs();
 
-            const maxUserDistance = parseFloat(distanceSlider.value);
-            const selectedCat = categoryFilter.value;
-
-            const querySnap = await getDocs(collection(db, "messages"));
-
+            const maxDistance = parseFloat(distanceSlider.value);
+            const selectedCategory = categoryFilter.value;
             const now = Date.now();
             let shown = 0;
 
-            for (const docSnap of querySnap.docs) {
-                const data = docSnap.data();
-
+            // Filter first so we only iterate over matching posts
+            const filteredMessages = messages.filter(data => {
                 const expiry = data.expiresAt?.seconds ? data.expiresAt.seconds * 1000 : 0;
-                if (expiry && now > expiry) continue;
-
+                if (expiry && now > expiry) return false;
                 const dist = getDistance(userLat, userLon, data.latitude, data.longitude);
-                if (dist > (data.distance || 1) || dist > maxUserDistance) continue;
+                if (dist > (data.distance ?? 1) || dist > maxDistance) return false;
+                if (currentTab === "Messaging" && data.category === "Food Share") return false;
+                if (currentTab === "Food Share" && data.category !== "Food Share") return false;
+                if (currentTab === "Messaging" && selectedCategory !== "All" && data.category !== selectedCategory) return false;
+                return true;
+            });
 
-                if (currentTab === "Messaging" && data.category === "Food Share") continue;
-                if (currentTab === "Food Share" && data.category !== "Food Share") continue;
-                if (currentTab === "Messaging" && selectedCat !== "All" && data.category !== selectedCat) continue;
+            // Progressive rendering
+            filteredMessages.forEach((data, index) => {
+                setTimeout(() => {
+                    const authorName = data.authorName || "Unknown User";
+                    const dist = getDistance(userLat, userLon, data.latitude, data.longitude);
+                    const liked = data.likes?.includes(currentUser.uid);
 
-                const profSnap = await getDoc(doc(db, "profiles", data.uid));
-                const author = profSnap.exists() ? profSnap.data() : { name: "Unknown User" };
-
-                const liked = data.likes?.includes(currentUser.uid);
-
-                const card = document.createElement("div");
-                card.className = "bg-white p-4 rounded-xl shadow hover:shadow-md transition animate-fade space-y-3";
-
-                card.innerHTML = `
+                    const card = document.createElement("div");
+                    card.className = "bg-white p-4 rounded-xl shadow hover:shadow-md transition animate-fade space-y-3";
+                    card.innerHTML = `
         <div class="flex justify-between items-center">
           <div>
-            <strong>${escapeHtml(author.name || "Unknown User")}</strong>
-            <button class="text-indigo-600 text-xs ml-2 view-profile" data-uid="${data.uid}">View Profile</button>
+            <strong>${escapeHtml(authorName)}</strong>
+            <button type="button" class="text-indigo-600 text-xs ml-2 view-profile" data-uid="${data.uid ?? ''}">View Profile</button>
           </div>
-          <button class="like-btn text-sm ${liked ? "text-red-500" : "text-gray-400"}" data-id="${docSnap.id}" aria-label="Like button">
-            ${liked ? "❤️" : "🤍"} ${data.likes?.length || 0}
+          <button type="button" class="like-btn text-sm ${liked ? 'text-red-500' : 'text-gray-400'}" data-id="${data.id}" aria-label="Like button">
+            ${liked ? '❤️' : '🤍'} ${data.likes?.length || 0}
           </button>
         </div>
         <h2 class="text-lg font-semibold text-gray-900">${escapeHtml(data.title)}</h2>
@@ -393,37 +450,52 @@
           ${escapeHtml(data.category)} • ${dist.toFixed(2)} km away • 
           <a href="https://maps.google.com/?q=${data.latitude},${data.longitude}" target="_blank" rel="noopener" class="underline">View Map</a>
         </div>
-
-        <button class="comment-toggle mt-2 text-indigo-500 text-sm" data-id="${docSnap.id}">
+        <button type="button" class="comment-toggle mt-2 text-indigo-500 text-sm" data-id="${data.id}">
           💬 Comments (${data.comments?.length || 0})
         </button>
-        <div class="comment-section hidden space-y-2 mt-2" data-id="${docSnap.id}">
+        <div class="comment-section hidden space-y-2 mt-2" data-id="${data.id}">
           <div class="comments max-h-40 overflow-auto text-sm space-y-2"></div>
           <div class="flex gap-2 mt-2">
             <input class="comment-input flex-1 border rounded px-2 py-1 text-sm" placeholder="Write a comment..." />
-            <button class="send-comment bg-indigo-600 text-white px-3 py-1 rounded text-sm">Send</button>
+            <button type="button" class="send-comment bg-indigo-600 text-white px-3 py-1 rounded text-sm">Send</button>
           </div>
         </div>
       `;
-                postFeed.appendChild(card);
-                shown++;
-            }
+                    postFeed.appendChild(card);
+                    shown++;
 
-            if (shown === 0) {
-                postFeed.innerHTML = `<div class="text-center text-gray-500 mt-10">No posts found for selected filters.</div>`;
-            }
+                    // Attach handlers for this one card immediately (so Like/Comment work without waiting)
+                    attachHandlers();
 
-            attachHandlers();
-            loadingEl.classList.add("hidden");
+                    if (shown === filteredMessages.length) {
+                        if (shown === 0) {
+                            postFeed.innerHTML = `<div class="text-center text-gray-500 mt-10">No posts found for selected filters.</div>`;
+                        }
+                    }
+                }, index * 1); // 50ms stagger between posts (tweak as desired)
+            });
         }
 
+
+        function updateTabs() {
+            msgTabBtn.classList.toggle("border-indigo-500", currentTab === "Messaging");
+            msgTabBtn.classList.toggle("border-transparent", currentTab !== "Messaging");
+            foodTabBtn.classList.toggle("border-indigo-500", currentTab === "Food Share");
+            foodTabBtn.classList.toggle("border-transparent", currentTab !== "Food Share");
+            if (currentTab === "Messaging") {
+                categoryFilter.classList.remove("hidden");
+            } else {
+                categoryFilter.classList.add("hidden");
+            }
+        }
+
+        // -- ALL DYNAMIC BUTTONS: Like, Comment, Profile (robust, always runs after rendering) --
         function attachHandlers() {
-            // Like button handler
-            document.querySelectorAll('.like-btn').forEach(btn => {
+            // LIKE
+            Array.from(document.getElementsByClassName('like-btn')).forEach(btn => {
                 btn.onclick = async () => {
                     const id = btn.dataset.id;
-
-                    if (likeInProgress.has(id)) return; // Ignore if updating in progress
+                    if (likeInProgress.has(id)) return;
                     likeInProgress.add(id);
 
                     if (!currentUser) {
@@ -431,23 +503,16 @@
                         likeInProgress.delete(id);
                         return;
                     }
-
                     try {
                         const ref = doc(db, 'messages', id);
                         const snap = await getDoc(ref);
                         const d = snap.data();
-
                         const userLiked = d.likes?.includes(currentUser.uid);
                         const op = userLiked ? arrayRemove : arrayUnion;
-
                         await updateDoc(ref, { likes: op(currentUser.uid) });
 
-                        // Optimistic UI update
-                        btn.classList.toggle("text-red-500", !userLiked);
-                        btn.classList.toggle("text-gray-400", userLiked);
-                        const updatedLikeCount = userLiked ? (d.likes.length - 1) : (d.likes.length + 1);
-                        btn.innerHTML = `${!userLiked ? '❤️' : '🤍'} ${updatedLikeCount}`;
-
+                        // Refresh button state by re-rendering all
+                        renderMessages(cachedMessagesData);
                     } catch (err) {
                         console.error("Error updating likes:", err);
                         alert("Failed to update like. Please try again.");
@@ -457,15 +522,13 @@
                 };
             });
 
-            // Comment toggle handler: toggle comment section and load fresh comments
-            document.querySelectorAll('.comment-toggle').forEach(btn => {
+            // COMMENT TOGGLE
+            Array.from(document.getElementsByClassName('comment-toggle')).forEach(btn => {
                 btn.onclick = async () => {
                     const id = btn.dataset.id;
                     const section = document.querySelector(`.comment-section[data-id="${id}"]`);
                     section.classList.toggle('hidden');
-
                     if (!section.classList.contains('hidden')) {
-                        // Load fresh comments and focus input
                         const ref = doc(db, 'messages', id);
                         const snap = await getDoc(ref);
                         const comments = snap.data().comments || [];
@@ -478,45 +541,32 @@
                 };
             });
 
-            // Send comment handler: post comment and refresh comments in section
-            document.querySelectorAll('.send-comment').forEach(btn => {
+            // SEND COMMENT
+            Array.from(document.getElementsByClassName('send-comment')).forEach(btn => {
                 btn.onclick = async () => {
                     const section = btn.closest('.comment-section');
                     const input = section.querySelector('.comment-input');
                     const text = input.value.trim();
                     const id = section.dataset.id;
                     const commentToggleBtn = document.querySelector(`.comment-toggle[data-id="${id}"]`);
-
                     if (!text) return;
-                    if (!userProfile || !userProfile.name) return location.href = 'profile.html';
-
+                    if (!userProfile?.name) return location.href = 'profile.html';
                     const comment = {
                         uid: currentUser.uid,
                         name: userProfile.name,
-                        text: text,
+                        text,
                         timestamp: Date.now()
                     };
-
                     try {
-                        await updateDoc(doc(db, 'messages', id), {
-                            comments: arrayUnion(comment)
-                        });
-
+                        await updateDoc(doc(db, 'messages', id), { comments: arrayUnion(comment) });
                         input.value = '';
-
-                        // Reload comments display only for this section
-                        const ref = doc(db, 'messages', id);
-                        const snap = await getDoc(ref);
+                        const snap = await getDoc(doc(db, 'messages', id));
                         const comments = snap.data().comments || [];
                         const commentsEl = section.querySelector('.comments');
                         commentsEl.innerHTML = comments.map(c =>
                             `<div><strong>${escapeHtml(c.name)}</strong>: ${escapeHtml(c.text)}</div>`).join('');
-
-                        // Update comment count in the comment toggle button
-                        if (commentToggleBtn) {
+                        if (commentToggleBtn)
                             commentToggleBtn.textContent = `💬 Comments (${comments.length})`;
-                        }
-
                         input.focus();
                     } catch (err) {
                         console.error("Error adding comment:", err);
@@ -525,34 +575,43 @@
                 };
             });
 
-            // View Profile button handler: navigate to profile page with uid param
-            document.querySelectorAll('.view-profile').forEach(btn => {
-                btn.onclick = (e) => {
+            // VIEW PROFILE
+            Array.from(document.getElementsByClassName('view-profile')).forEach(btn => {
+                btn.onclick = e => {
                     e.preventDefault();
                     const uid = btn.dataset.uid;
-                    if (uid) {
-                        location.href = `profile.html?uid=${uid}`;
-                    }
+                    if (uid) location.href = `profile.html?uid=${uid}`;
                 };
             });
         }
 
-
-        function escapeHtml(text) {
-            if (!text) return '';
-            return text.replace(/[&<>"']/g, function (m) {
-                switch (m) {
-                    case '&': return '&amp;';
-                    case '<': return '&lt;';
-                    case '>': return '&gt;';
-                    case '"': return '&quot;';
-                    case "'": return '&#39;';
-                    default: return m;
-                }
-            });
-        }
+        // Tab switching
+        msgTabBtn.addEventListener("click", () => {
+            if (currentTab !== "Messaging") {
+                currentTab = "Messaging";
+                updateTabs();
+                renderMessages(cachedMessagesData);
+            }
+        });
+        foodTabBtn.addEventListener("click", () => {
+            if (currentTab !== "Food Share") {
+                currentTab = "Food Share";
+                updateTabs();
+                renderMessages(cachedMessagesData);
+            }
+        });
+        distanceSlider.addEventListener("input", () => {
+            distanceValue.textContent = `${distanceSlider.value} km`;
+            clearTimeout(window.distanceTimeout);
+            window.distanceTimeout = setTimeout(() => {
+                renderMessages(cachedMessagesData);
+            }, 300);
+        });
+        categoryFilter.addEventListener("change", () => {
+            renderMessages(cachedMessagesData);
+        });
+        updateTabs();
     </script>
-
 
 </body>
 

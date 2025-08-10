@@ -71,7 +71,6 @@
         <!-- Profile Content -->
         <section class="p-4 max-w-2xl mx-auto w-full space-y-6 animate-fade">
 
-
             <!-- Profile View -->
             <div id="profileContainer" class="bg-white rounded-xl shadow p-6 space-y-6">
 
@@ -133,7 +132,6 @@
                 </form>
             </div>
 
-
             <!-- User Posts -->
             <section id="postsContainer" class="space-y-6 pb-10">
 
@@ -174,7 +172,7 @@
         import {
             doc, getDoc, setDoc,
             collection, query, where, getDocs,
-            deleteDoc, updateDoc, arrayRemove
+            deleteDoc, updateDoc
         } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
         import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
         const hamburgerBtn = document.getElementById('hamburgerBtn');
@@ -196,7 +194,7 @@
             }
         });
 
-        // Handle logout button click (example with Firebase Auth)
+        // Logout handler
         logoutBtn.addEventListener('click', async () => {
             try {
                 await auth.signOut();
@@ -205,13 +203,14 @@
                 alert('Logout failed: ' + error.message);
             }
         });
-        // Utility: parse URL query params to get 'uid', if any
+
+        // Get UID from query param or return null
         function getQueryUid() {
             const params = new URLSearchParams(window.location.search);
             return params.get('uid');
         }
 
-        // Utils:
+        // HTML escape helper
         function escapeHtml(text) {
             if (!text) return '';
             return text.replace(/[&<>"']/g, function (m) {
@@ -255,6 +254,37 @@
         let viewingUid = null;
         let isOwnProfile = false;
         let userProfileData = null;
+        postsList.innerHTML = `<div class="text-center text-gray-500 py-6">Loading Profile...</div>`;
+        // Cache helpers
+        function getProfileCacheKey(uid) {
+            return `profileCache_${uid}`;
+        }
+
+        function cacheProfileData(uid, data) {
+            const cacheObj = {
+                timestamp: Date.now(),
+                data
+            };
+            try {
+                sessionStorage.setItem(getProfileCacheKey(uid), JSON.stringify(cacheObj));
+            } catch {
+                // ignore storage errors
+            }
+        }
+
+        function getCachedProfileData(uid, maxAgeMs = 5 * 60 * 1000) { // 5 minutes cache expiry
+            const cachedRaw = sessionStorage.getItem(getProfileCacheKey(uid));
+            if (!cachedRaw) return null;
+            try {
+                const cached = JSON.parse(cachedRaw);
+                if ((Date.now() - cached.timestamp) < maxAgeMs) {
+                    return cached.data;
+                }
+            } catch {
+                // invalid JSON or corrupted data
+            }
+            return null;
+        }
 
         onAuthStateChanged(auth, async (user) => {
             if (!user) {
@@ -263,7 +293,6 @@
             }
             currentUser = user;
 
-            // Determine profile viewed
             const uidFromQuery = getQueryUid();
             if (!uidFromQuery || uidFromQuery === currentUser.uid) {
                 viewingUid = currentUser.uid;
@@ -277,35 +306,47 @@
             await loadUserPosts();
         });
 
-        // Load profile data and render it
         async function loadProfile() {
             try {
-                const docRef = doc(db, 'profiles', viewingUid);
-                const profileSnap = await getDoc(docRef);
+                // Try cached first for instant UI
+                const cachedData = getCachedProfileData(viewingUid);
+                if (cachedData) {
+                    userProfileData = cachedData;
+                    renderProfile(userProfileData);
 
-                if (profileSnap.exists()) {
-                    userProfileData = profileSnap.data();
-                    // Show profile form only for own profile if not set
-                    if (isOwnProfile) {
-                        if (!userProfileData.name) {
-                            // Show form to fill profile
-                            formContainer.classList.remove('hidden');
-                            profileContainer.classList.add('hidden');
-                        } else {
-                            renderProfile(userProfileData);
-                            formContainer.classList.add('hidden');
-                            profileContainer.classList.remove('hidden');
-                            editBtn.style.display = 'inline-block';
-                        }
+                    if (isOwnProfile && !userProfileData.name) {
+                        formContainer.classList.remove('hidden');
+                        profileContainer.classList.add('hidden');
+                        editBtn.style.display = 'none';
                     } else {
-                        // Viewing others' profile
-                        renderProfile(userProfileData);
                         formContainer.classList.add('hidden');
                         profileContainer.classList.remove('hidden');
-                        editBtn.style.display = 'none';
+                        editBtn.style.display = isOwnProfile ? 'inline-block' : 'none';
                     }
-                } else {
-                    // No profile found - show form if own, or fallback message otherwise
+                }
+
+                // Fetch fresh data silently
+                const docRef = doc(db, 'profiles', viewingUid);
+                const profileSnap = await getDoc(docRef);
+                if (profileSnap.exists()) {
+                    const freshData = profileSnap.data();
+                    if (JSON.stringify(freshData) !== JSON.stringify(userProfileData)) {
+                        userProfileData = freshData;
+                        cacheProfileData(viewingUid, freshData);
+                        renderProfile(userProfileData);
+
+                        if (isOwnProfile && !userProfileData.name) {
+                            formContainer.classList.remove('hidden');
+                            profileContainer.classList.add('hidden');
+                            editBtn.style.display = 'none';
+                        } else {
+                            formContainer.classList.add('hidden');
+                            profileContainer.classList.remove('hidden');
+                            editBtn.style.display = isOwnProfile ? 'inline-block' : 'none';
+                        }
+                    }
+                } else if (!cachedData) {
+                    // No profile and no cache
                     if (isOwnProfile) {
                         formContainer.classList.remove('hidden');
                         profileContainer.classList.add('hidden');
@@ -322,7 +363,6 @@
                 profileContainer.innerHTML = '<p class="text-center text-red-600">Failed to load profile.</p>';
             }
         }
-
 
         profileForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -341,6 +381,7 @@
             try {
                 await setDoc(doc(db, 'profiles', currentUser.uid), data);
                 userProfileData = data;
+                cacheProfileData(currentUser.uid, data); // Update cache immediately
                 renderProfile(data);
                 formContainer.classList.add('hidden');
                 profileContainer.classList.remove('hidden');
@@ -350,7 +391,6 @@
                 console.error(err);
             }
         });
-
 
         editBtn.addEventListener('click', async () => {
             if (!isOwnProfile) return;
@@ -374,7 +414,7 @@
             }
         });
 
-        // Load user posts and render
+        // Load user posts for profile
         async function loadUserPosts() {
             postsList.innerHTML = `<div class="text-center text-gray-500 py-6">Loading posts...</div>`;
 
@@ -388,26 +428,37 @@
                 }
 
                 postsList.innerHTML = '';
+                const nowMs = Date.now();
 
                 for (const docSnap of querySnap.docs) {
                     const postData = docSnap.data();
                     const postId = docSnap.id;
 
+                    // Skip expired posts
+                    if (postData.expiresAt?.seconds) {
+                        const expiryMs = postData.expiresAt.seconds * 1000;
+                        if (expiryMs < nowMs) continue;
+                    }
+
                     renderPost(postId, postData);
+                }
+                if (postsList.children.length === 0) {
+                    postsList.innerHTML = '<p class="text-center text-gray-500 py-6">No active posts found.</p>';
                 }
             } catch (err) {
                 console.error("Error loading posts:", err);
                 postsList.innerHTML = '<p class="text-center text-red-600">Failed to load posts.</p>';
             }
         }
+
+
         function formatExpiry(timestampMs) {
             if (!timestampMs) return 'No expiry';
             const dt = new Date(timestampMs);
-            return `Expires at ${dt.toLocaleString()}`; // eg: "Expires at 8/7/2025, 10:00:00 PM"
+            return `Expires at ${dt.toLocaleString()}`;
         }
-        // Render a single post with comments and delete options based on ownership
+
         function renderPost(postId, postData) {
-            // Format expiry
             let expiryText = '';
             if (postData.expiresAt?.seconds) {
                 const expiryTs = postData.expiresAt.seconds * 1000;
@@ -423,45 +474,44 @@
             postDiv.setAttribute('data-post-id', postId);
 
             postDiv.innerHTML = `
-    <div class="flex justify-between items-center">
-      <h4 class="text-lg font-semibold text-gray-900">${escapeHtml(postData.title)}</h4>
-      ${isOwnProfile ? `<button data-post-id="${postId}" aria-label="Delete post" title="Delete Post" class="delete-post-btn text-red-500 hover:text-red-700 transition">🗑️</button>` : ''}
-    </div>
-    <p class="text-gray-700">${escapeHtml(postData.description)}</p>
+                <div class="flex justify-between items-center">
+                    <h4 class="text-lg font-semibold text-gray-900">${escapeHtml(postData.title)}</h4>
+                    ${isOwnProfile ? `<button data-post-id="${postId}" aria-label="Delete post" title="Delete Post" class="delete-post-btn text-red-500 hover:text-red-700 transition">🗑️</button>` : ''}
+                </div>
+                <p class="text-gray-700">${escapeHtml(postData.description)}</p>
 
-    <div class="text-xs text-gray-500 flex justify-between">
-      <div>${escapeHtml(postData.customLocation || "Unknown location")}</div>
-      <div>${expiryText}</div>
-    </div>
+                <div class="text-xs text-gray-500 flex justify-between">
+                    <div>${escapeHtml(postData.customLocation || "Unknown location")}</div>
+                    <div>${expiryText}</div>
+                </div>
 
-    <div class="text-xs text-gray-500">${escapeHtml(postData.category || '')}</div>
+                <div class="text-xs text-gray-500">${escapeHtml(postData.category || '')}</div>
 
-    <!-- Comments Section -->
-    <div class="mt-4">
-      <button aria-expanded="false" class="comment-toggle-btn text-indigo-600 text-sm font-semibold underline cursor-pointer">
-        💬 Comments (${comments.length})
-      </button>
-      <div class="comment-section hidden mt-2 space-y-2 max-h-48 overflow-auto border p-2 rounded bg-gray-50">
-        <div class="comments-list space-y-2 text-sm text-gray-800">
-          ${comments.length === 0 ? `<p class="italic text-gray-500">No comments yet.</p>` : comments.map((c, i) =>
+                <!-- Comments Section -->
+                <div class="mt-4">
+                    <button aria-expanded="false" class="comment-toggle-btn text-indigo-600 text-sm font-semibold underline cursor-pointer">
+                        💬 Comments (${comments.length})
+                    </button>
+                    <div class="comment-section hidden mt-2 space-y-2 max-h-48 overflow-auto border p-2 rounded bg-gray-50">
+                        <div class="comments-list space-y-2 text-sm text-gray-800">
+                            ${comments.length === 0 ? `<p class="italic text-gray-500">No comments yet.</p>` : comments.map((c, i) =>
                 `<div class="flex justify-between items-start" data-comment-index="${i}">
-              <div>
-                <strong>${escapeHtml(c.name)}</strong>:
-                ${escapeHtml(c.text)} <br />
-                <span class="text-xs text-gray-500">${timeAgo(c.timestamp)}</span>
-              </div>
-              ${isOwnProfile ? `<button class="delete-comment-btn text-red-500 hover:text-red-700 ml-2" title="Delete Comment" aria-label="Delete comment" data-comment-index="${i}">✖️</button>` : ''}
-            </div>`).join('')}
-        </div>
-        <!-- Removed add-comment-form to disable adding comments -->
-      </div>
-    </div>
-  `;
+                                    <div>
+                                        <strong>${escapeHtml(c.name)}</strong>: ${escapeHtml(c.text)} <br />
+                                        <span class="text-xs text-gray-500">${timeAgo(c.timestamp)}</span>
+                                    </div>
+                                    ${isOwnProfile ? `<button class="delete-comment-btn text-red-500 hover:text-red-700 ml-2" title="Delete Comment" aria-label="Delete comment" data-comment-index="${i}">✖️</button>` : ''}
+                                </div>`).join('')}
+                        </div>
+                        <!-- Add comment disabled here as per your code -->
+                    </div>
+                </div>
+            `;
 
             postsList.appendChild(postDiv);
 
+            // Attach Post Delete handler
             if (isOwnProfile) {
-                // Attach Post Delete handler
                 postDiv.querySelector('.delete-post-btn')?.addEventListener('click', async () => {
                     if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) return;
                     try {
@@ -483,7 +533,7 @@
                 commentSection.classList.toggle('hidden');
             });
 
-            // Attach delete comment handlers if viewing own profile
+            // Attach delete comment handlers (if own profile)
             if (isOwnProfile) {
                 postDiv.querySelectorAll('.delete-comment-btn').forEach(btn => {
                     const commentIndex = parseInt(btn.getAttribute('data-comment-index'));
@@ -494,15 +544,13 @@
             }
         }
 
-        // Delete comment by index from array in Firestore and update UI
+        // Delete comment by index and update Firestore and UI
         async function deleteComment(postId, commentIndex, postDiv) {
             if (!confirm('Delete this comment? This action cannot be undone.')) return;
 
             try {
-                // Get current comments array
                 const postRef = doc(db, 'messages', postId);
                 const postSnap = await getDoc(postRef);
-
                 if (!postSnap.exists()) {
                     alert('Post no longer exists');
                     return;
@@ -514,23 +562,16 @@
                     return;
                 }
 
-                // Remove comment from array
-                const removedComment = comments[commentIndex];
                 const updatedComments = comments.filter((_, idx) => idx !== commentIndex);
-
-                // Update Firestore: replace comments array
                 await updateDoc(postRef, { comments: updatedComments });
 
-                // Update UI: remove comment div
                 const commentDiv = postDiv.querySelector(`.comments-list > div[data-comment-index="${commentIndex}"]`);
                 if (commentDiv) commentDiv.remove();
 
-                // Update comment count badge
                 const commentToggleBtn = postDiv.querySelector('.comment-toggle-btn');
                 const newCount = updatedComments.length;
                 commentToggleBtn.textContent = `💬 Comments (${newCount})`;
 
-                // If no comments left, show "No comments yet"
                 if (newCount === 0) {
                     const commentsList = postDiv.querySelector('.comments-list');
                     const noComMsg = document.createElement('p');
@@ -539,16 +580,14 @@
                     commentsList.appendChild(noComMsg);
                 }
 
-                // Refresh comment indexes and delete buttons to prevent mismatch
                 refreshCommentIndexes(postDiv);
-
             } catch (err) {
                 alert('Failed to delete comment: ' + err.message);
                 console.error(err);
             }
         }
 
-        // Helper to fix data-comment-index attributes and handlers after comment deletion
+        // Refresh comment indexes & delete handlers after deletion
         function refreshCommentIndexes(postDiv) {
             const commentsList = postDiv.querySelector('.comments-list');
             const commentDivs = Array.from(commentsList.querySelectorAll('div[data-comment-index]'));
@@ -557,12 +596,9 @@
                 const delBtn = div.querySelector('.delete-comment-btn');
                 if (delBtn) {
                     delBtn.setAttribute('data-comment-index', i);
-
-                    // Remove old listeners to avoid duplicates by cloning
                     const oldBtn = delBtn;
                     const newBtn = oldBtn.cloneNode(true);
                     oldBtn.parentNode.replaceChild(newBtn, oldBtn);
-
                     if (isOwnProfile) {
                         newBtn.addEventListener('click', async () => {
                             await deleteComment(postDiv.getAttribute('data-post-id'), i, postDiv);
