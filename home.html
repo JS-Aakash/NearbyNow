@@ -2,6 +2,7 @@
 <html lang="en">
 
 <head>
+    <link rel="icon" href="Images/favicon.ico" type="image/x-icon" />
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>NearbyNow</title>
@@ -23,6 +24,53 @@
             },
         };
     </script>
+    <style>
+        /* Added for consistent image ratio */
+        .post-image {
+            width: 100%;
+            height: auto;
+            aspect-ratio: 16 / 9;
+            object-fit: cover;
+            border-radius: 0.375rem;
+            /* rounded-md */
+        }
+
+        .post-image {
+            width: 100%;
+            max-width: 500px;
+            /* limit max width on desktop */
+            height: auto;
+            aspect-ratio: 16 / 9;
+            object-fit: cover;
+            border-radius: 0.375rem;
+            /* rounded-md */
+            margin: 0 auto;
+            /* center horizontally if smaller */
+        }
+
+        @media (min-width: 768px) {
+
+            /* For medium and larger screens */
+            .post-image {
+                max-width: 500px;
+                /* smaller max width on desktops */
+            }
+        }
+
+        main {
+            position: relative;
+            overflow-y: auto;
+            height: 100vh;
+            /* full viewport height */
+            padding-bottom: 56px;
+            /* space for bottom fixed nav bar */
+        }
+
+        #postFeed {
+            padding-bottom: 56px;
+            /* ensure posts do not get hidden behind nav */
+        }
+    </style>
 </head>
 
 <body class="bg-gray-100 min-h-screen flex flex-col md:flex-row">
@@ -33,6 +81,7 @@
             <img src="Images/profile.png" alt="Profile" class="w-11 h-11 rounded-full" />
             <span class="text-lg font-bold">NearbyNow</span>
         </div>
+
         <nav class="space-y-5 text-base">
             <a href="home.html" class="flex items-center gap-2 hover:text-indigo-600 font-medium">Home</a>
             <a href="add-message.html" class="flex items-center gap-2 hover:text-indigo-600 font-medium">Add Post</a>
@@ -52,13 +101,13 @@
             <img src="Images/profile.png" alt="" class="w-9 h-9 rounded-full" />
             <h1 class="text-lg font-bold">NearbyNow</h1>
 
-            <!-- Hamburger button -->
+            <!-- Hamburger -->
             <button id="hamburgerBtn" aria-label="Menu" aria-expanded="false"
                 class="text-gray-800 text-3xl p-2 rounded-full hover:bg-gray-200 transition duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                &#9776; <!-- hamburger icon -->
+                &#9776;
             </button>
 
-            <!-- Dropdown menu -->
+            <!-- Dropdown Menu -->
             <div id="hamburgerMenu"
                 class="hidden absolute top-full right-4 mt-2 w-36 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
                 <a href="settings.html"
@@ -71,10 +120,10 @@
         <!-- Tabs -->
         <div class="bg-white flex justify-around text-sm font-semibold shadow">
             <button id="msgTab" type="button"
-                class="tab-btn py-3 w-1/2 border-b-4 border-indigo-500 text-gray-900 transition">Nearby
+                class="tab-btn w-1/2 py-3 border-b-4 border-indigo-500 text-gray-900 transition">Nearby
                 Messaging</button>
             <button id="foodTab" type="button"
-                class="tab-btn py-3 w-1/2 border-b-4 border-transparent text-gray-600 transition">Food Share</button>
+                class="tab-btn w-1/2 py-3 border-b-4 border-transparent text-gray-600 transition">Food Share</button>
         </div>
 
         <!-- Filters -->
@@ -91,36 +140,37 @@
             <div class="flex items-center gap-1 ml-auto">
                 <label for="distanceFilter"
                     class="text-sm font-medium whitespace-nowrap hidden sm:block">Distance:</label>
-                <input type="range" id="distanceFilter" min="0.1" max="20" step="0.1" value="1" class="w-28 sm:w-32" />
+                <input type="range" id="distanceFilter" class="w-28 sm:w-32" min="0.1" max="20" step="0.1" value="1" />
                 <span id="distanceValue" class="text-sm font-medium whitespace-nowrap">1 km</span>
             </div>
         </div>
 
-        <style>
-            #distanceValue {
-                display: inline-block;
-                min-width: 50px;
-                text-align: center;
-            }
-        </style>
-
-        <!-- Location Error / Permission Dialog -->
+        <!-- Location Error -->
         <div id="locationRetry"
-            class="hidden max-w-md mx-auto mt-6 p-5 bg-yellow-100 text-yellow-900 rounded-lg shadow-lg text-center select-none">
+            class="hidden max-w-md mx-auto mt-6 p-5 bg-yellow-100 text-yellow-900 rounded-lg select-none shadow-lg text-center">
             <p class="mb-4 text-lg font-semibold">Location Access Required</p>
-            <p class="mb-4">NearbyNow requires access to your location to function properly. Please enable location
-                permissions in your browser settings.</p>
+            <p class="mb-4">NearbyNow requires access to your location. Please enable location permissions in your
+                browser.</p>
             <button id="tryAgainBtn"
-                class="px-5 py-2 bg-yellow-400 text-yellow-900 font-semibold rounded-md hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-600 focus:ring-offset-1">
-                Enable Location & Retry
+                class="px-5 py-2 bg-yellow-400 text-yellow-900 font-semibold rounded hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-600 focus:ring-offset-1">
+                Enable & Retry
             </button>
         </div>
 
         <!-- Loading Indicator -->
-        <div id="loading" class="text-center text-gray-500 py-6 hidden">Loading...</div>
+        <div id="loading" class="flex flex-col items-center py-12">
+            <div class="flex space-x-3 mb-2">
+                <div class="h-3 w-3 bg-indigo-600 rounded-full animate-pulse"></div>
+                <div class="h-3 w-3 bg-purple-500 rounded-full animate-pulse delay-150"></div>
+                <div class="h-3 w-3 bg-pink-400 rounded-full animate-pulse delay-300"></div>
+            </div>
+            <span class="text-indigo-700 font-semibold text-lg">Finding Nearby Posts...</span>
+        </div>
 
         <!-- Posts Feed -->
-        <section id="postFeed" class="p-4 space-y-4 overflow-auto flex-1 pb-24 animate-fade"></section>
+        <section id="postFeed" class="p-4 space-y-4 overflow-auto flex-1 animate-fade">
+            <div style="height: 56px;"></div>
+        </section>
 
         <!-- Mobile Nav -->
         <nav
@@ -140,14 +190,12 @@
             <a href="profile.html" class="flex flex-col items-center gap-0.5" aria-label="Profile">
                 <img src="Images/c60ea00b55471c5a57ce5109dcd2f7df.png" alt="Profile" class="h-8 w-8" />
             </a>
-
         </nav>
-
     </main>
 
     <!-- Firebase + Script -->
     <script type="module">
-        import { db, auth } from './firebase-config.js';
+        import { auth, db } from './firebase-config.js';
         import {
             collection,
             doc,
@@ -155,463 +203,494 @@
             updateDoc,
             arrayUnion,
             arrayRemove,
-            onSnapshot
+            onSnapshot,
         } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
         import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
-        // Globals
-        let currentTab = "Messaging";
-        let userLat = null, userLon = null;
-        let locationInitialized = false;
-        let currentUser = null, userProfile = null;
-        let cachedMessagesData = [];
-        const likeInProgress = new Set();
+        document.addEventListener('DOMContentLoaded', () => {
+            let currentTab = 'Messaging';
+            let userLat = null,
+                userLon = null;
+            let locationInitialized = false;
+            let currentUser = null,
+                userProfile = null;
+            let cachedMessageData = [];
+            const likeInProgress = new Set();
 
-        // DOM elements
-        const msgTabBtn = document.getElementById("msgTab");
-        const foodTabBtn = document.getElementById("foodTab");
-        const categoryFilter = document.getElementById("categoryFilter");
-        const distanceSlider = document.getElementById("distanceFilter");
-        const distanceValue = document.getElementById("distanceValue");
-        const postFeed = document.getElementById("postFeed");
-        const loadingEl = document.getElementById("loading");
-        const locationRetry = document.getElementById("locationRetry");
-        const tryAgainBtn = document.getElementById("tryAgainBtn");
-        const hamburgerBtn = document.getElementById('hamburgerBtn');
-        const hamburgerMenu = document.getElementById('hamburgerMenu');
-        const logoutBtn = document.getElementById('logoutBtn');
+            const msgTabBtn = document.getElementById('msgTab');
+            const foodTabBtn = document.getElementById('foodTab');
+            const categoryFilter = document.getElementById('categoryFilter');
+            const distanceSlider = document.getElementById('distanceFilter');
+            const distanceValue = document.getElementById('distanceValue');
+            const postFeed = document.getElementById('postFeed');
+            const loadingEl = document.getElementById('loading');
+            const locationRetry = document.getElementById('locationRetry');
+            const tryAgainBtn = document.getElementById('tryAgainBtn');
+            const hamburgerBtn = document.getElementById('hamburgerBtn');
+            const hamburgerMenu = document.getElementById('hamburgerMenu');
+            const logoutBtn = document.getElementById('logoutBtn');
 
-        let unsubscribeMessages = null;
+            let unsubscribe = null;
 
-        // --------- Handle full reload detection for all browsers ----------
-        let isReload = false;
-        if (
-            (performance.getEntriesByType && performance.getEntriesByType("navigation")[0]?.type === "reload") ||
-            (performance.navigation && performance.navigation.type === 1)
-        ) {
-            isReload = true;
-        }
-        // -----------------------------------------------------------------
-
-        // Hamburger menu toggle handlers
-        hamburgerBtn.addEventListener('click', () => {
-            const expanded = hamburgerBtn.getAttribute('aria-expanded') === 'true';
-            hamburgerBtn.setAttribute('aria-expanded', !expanded);
-            hamburgerMenu.classList.toggle('hidden');
-        });
-        document.addEventListener('click', e => {
-            if (!hamburgerMenu.contains(e.target) && e.target !== hamburgerBtn) {
-                hamburgerMenu.classList.add('hidden');
-                hamburgerBtn.setAttribute('aria-expanded', false);
+            let isReload = false;
+            if (
+                (performance.getEntriesByType &&
+                    performance.getEntriesByType('navigation')[0]?.type === 'reload') ||
+                (performance.navigation && performance.navigation.type === 1)
+            ) {
+                isReload = true;
             }
-        });
-        logoutBtn.addEventListener('click', async () => {
-            try {
-                await auth.signOut();
-                window.location.href = 'index.html';
-            } catch (error) {
-                alert('Logout failed: ' + error.message);
-            }
-        });
 
-        // --------- Location logic: clear cache & get new coords only on reload ---------
-        async function getUserLocationIfNeeded() {
-            // On reload (includes swipe/pull-to-refresh), clear stored coords to force prompt
-            if (isReload) {
-                sessionStorage.removeItem('userLat');
-                sessionStorage.removeItem('userLon');
-            }
-            // Otherwise, only prompt if not cached in this session
-            const lat = sessionStorage.getItem('userLat');
-            const lon = sessionStorage.getItem('userLon');
-            if (lat && lon) {
-                userLat = parseFloat(lat);
-                userLon = parseFloat(lon);
-                locationInitialized = true;
-                startListeningMessages();
-            } else {
-                await requestLocation();
-            }
-        }
+            hamburgerBtn.addEventListener('click', () => {
+                const expanded = hamburgerBtn.getAttribute('aria-expanded') === 'true';
+                hamburgerBtn.setAttribute('aria-expanded', !expanded);
+                hamburgerMenu.classList.toggle('hidden');
+            });
+            document.addEventListener('click', (event) => {
+                if (!hamburgerMenu.contains(event.target) && event.target !== hamburgerBtn) {
+                    hamburgerMenu.classList.add('hidden');
+                    hamburgerBtn.setAttribute('aria-expanded', 'false');
+                }
+            });
 
-        async function requestLocation() {
-            loadingEl.classList.remove("hidden");
-            locationRetry.classList.add("hidden");
-            postFeed.classList.add("opacity-40", "pointer-events-none");
+            logoutBtn.addEventListener('click', async () => {
+                try {
+                    await auth.signOut();
+                    window.location.href = 'index.html';
+                } catch (error) {
+                    alert('Logout failed: ' + error.message);
+                }
+            });
 
-            async function checkPermissionStatus() {
-                if (navigator.permissions) {
+            async function updateUserLocation(lat, lon) {
+                if (currentUser && typeof lat === 'number' && typeof lon === 'number') {
                     try {
-                        const permissionStatus = await navigator.permissions.query({ name: 'geolocation' });
-                        if (permissionStatus.state === 'granted' || permissionStatus.state === 'prompt') {
-                            return await getLocation();
-                        } else if (permissionStatus.state === 'denied') {
-                            await showPermissionUI();
-                            return await checkPermissionStatus();
-                        }
-                        permissionStatus.onchange = () => {
-                            if (permissionStatus.state === 'granted') {
-                                getLocation();
-                            }
-                        };
-                    } catch {
-                        return await getLocation();
+                        await updateDoc(doc(db, 'profiles', currentUser.uid), {
+                            latitude: lat,
+                            longitude: lon,
+                        });
+                    } catch (error) {
+                        console.warn('Failed to update user location:', error.message);
                     }
+                }
+            }
+
+            async function getUserLocation() {
+                if (isReload) {
+                    sessionStorage.removeItem('userLat');
+                    sessionStorage.removeItem('userLon');
+                }
+                const latStored = sessionStorage.getItem('userLat');
+                const lonStored = sessionStorage.getItem('userLon');
+                if (latStored && lonStored) {
+                    userLat = parseFloat(latStored);
+                    userLon = parseFloat(lonStored);
+                    await updateUserLocation(userLat, userLon);
+                    startListeningMessages();
+                    locationInitialized = true;
                 } else {
-                    return await getLocation();
-                }
-            }
-
-            function getLocation() {
-                return new Promise((resolve, reject) => {
-                    navigator.geolocation.getCurrentPosition(
-                        async (pos) => {
-                            userLat = pos.coords.latitude;
-                            userLon = pos.coords.longitude;
-                            sessionStorage.setItem("userLat", userLat);
-                            sessionStorage.setItem("userLon", userLon);
-
-                            locationRetry.classList.add("hidden");
-                            loadingEl.classList.add("hidden");
-                            postFeed.classList.remove("opacity-40", "pointer-events-none");
-                            // If first load, start listening Firestore
-                            if (!locationInitialized) {
-                                locationInitialized = true;
-                                startListeningMessages();
-                            } else {
-                                // If refreshing location mid-session, rerender
-                                renderMessages(cachedMessagesData);
-                            }
-                            resolve();
-                        },
-                        async (err) => {
-                            if (err.code === err.PERMISSION_DENIED) {
-                                await showPermissionUI();
-                                resolve(await checkPermissionStatus());
-                            } else {
-                                alert("Error retrieving location: " + err.message);
-                                reject(err);
-                            }
-                        }
-                    );
-                });
-            }
-            function showPermissionUI() {
-                return new Promise((resolve) => {
-                    locationRetry.classList.remove("hidden");
-                    tryAgainBtn.onclick = () => {
-                        locationRetry.classList.add("hidden");
-                        loadingEl.classList.remove("hidden");
-                        resolve();
-                    };
-                    tryAgainBtn.focus();
-                });
-            }
-            await checkPermissionStatus();
-        }
-
-        // ----------------- Firebase Auth, location and Firestore start-up -----------------
-        onAuthStateChanged(auth, async user => {
-            if (!user) {
-                window.location.href = "index.html";
-                return;
-            }
-            currentUser = user;
-            try {
-                const profileSnap = await getDoc(doc(db, 'profiles', user.uid));
-                if (!profileSnap.exists()) {
-                    return window.location.href = 'profile.html';
-                }
-                userProfile = profileSnap.data();
-            } catch {
-                return window.location.href = 'profile.html';
-            }
-            await getUserLocationIfNeeded();
-        });
-
-        // ----------------- Core functions for feed and UI below -----------------
-        function getDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371;
-            const dLat = ((lat2 - lat1) * Math.PI) / 180;
-            const dLon = ((lon2 - lon1) * Math.PI) / 180;
-            const a =
-                Math.sin(dLat / 2) ** 2 +
-                Math.cos((lat1 * Math.PI) / 180) *
-                Math.cos((lat2 * Math.PI) / 180) *
-                Math.sin(dLon / 2) ** 2;
-            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        }
-        function timeAgo(timestamp) {
-            if (!timestamp) return "just now";
-            const seconds = Math.floor((Date.now() - timestamp) / 1000);
-            if (seconds < 30) return "just now";
-            const intervals = [
-                { label: "year", seconds: 31536000 },
-                { label: "month", seconds: 2592000 },
-                { label: "day", seconds: 86400 },
-                { label: "hour", seconds: 3600 },
-                { label: "minute", seconds: 60 },
-            ];
-            for (const interval of intervals) {
-                const count = Math.floor(seconds / interval.seconds);
-                if (count > 0) return `${count} ${interval.label}${count !== 1 ? "s" : ""} ago`;
-            }
-            return "just now";
-        }
-        function escapeHtml(text) {
-            if (!text) return '';
-            return text.replace(/[&<>"']/g, m => {
-                switch (m) {
-                    case '&': return '&amp;';
-                    case '<': return '&lt;';
-                    case '>': return '&gt;';
-                    case '"': return '&quot;';
-                    case "'": return '&#39;';
-                    default: return m;
-                }
-            });
-        }
-
-        function startListeningMessages() {
-            if (unsubscribeMessages) unsubscribeMessages();
-            loadingEl.classList.remove("hidden");
-            postFeed.innerHTML = "";
-
-            const messagesCol = collection(db, "messages");
-            unsubscribeMessages = onSnapshot(
-                messagesCol,
-                (querySnapshot) => {
-                    cachedMessagesData = querySnapshot.docs.map(docSnap => ({
-                        id: docSnap.id,
-                        ...docSnap.data()
-                    }));
-                    renderMessages(cachedMessagesData);
-                    loadingEl.classList.add("hidden");
-                },
-                error => {
-                    console.error("Error in real-time listener:", error);
-                    loadingEl.classList.add("hidden");
-                    postFeed.innerHTML = `<div class="text-center text-red-500 mt-10">Failed to load posts. Please try again later.</div>`;
-                }
-            );
-        }
-
-        function renderMessages(messages) {
-            if (userLat === null || userLon === null) {
-                postFeed.innerHTML = '<div class="text-center text-yellow-600 mt-10">Location required to view posts.</div>';
-                return;
-            }
-            postFeed.innerHTML = "";
-            updateTabs();
-
-            const maxDistance = parseFloat(distanceSlider.value);
-            const selectedCategory = categoryFilter.value;
-            const now = Date.now();
-            let shown = 0;
-
-            // Filter first so we only iterate over matching posts
-            const filteredMessages = messages.filter(data => {
-                const expiry = data.expiresAt?.seconds ? data.expiresAt.seconds * 1000 : 0;
-                if (expiry && now > expiry) return false;
-                const dist = getDistance(userLat, userLon, data.latitude, data.longitude);
-                if (dist > (data.distance ?? 1) || dist > maxDistance) return false;
-                if (currentTab === "Messaging" && data.category === "Food Share") return false;
-                if (currentTab === "Food Share" && data.category !== "Food Share") return false;
-                if (currentTab === "Messaging" && selectedCategory !== "All" && data.category !== selectedCategory) return false;
-                return true;
-            });
-
-            // Progressive rendering
-            filteredMessages.forEach((data, index) => {
-                setTimeout(() => {
-                    const authorName = data.authorName || "Unknown User";
-                    const dist = getDistance(userLat, userLon, data.latitude, data.longitude);
-                    const liked = data.likes?.includes(currentUser.uid);
-
-                    const card = document.createElement("div");
-                    card.className = "bg-white p-4 rounded-xl shadow hover:shadow-md transition animate-fade space-y-3";
-                    card.innerHTML = `
-        <div class="flex justify-between items-center">
-          <div>
-            <strong>${escapeHtml(authorName)}</strong>
-            <button type="button" class="text-indigo-600 text-xs ml-2 view-profile" data-uid="${data.uid ?? ''}">View Profile</button>
-          </div>
-          <button type="button" class="like-btn text-sm ${liked ? 'text-red-500' : 'text-gray-400'}" data-id="${data.id}" aria-label="Like button">
-            ${liked ? '❤️' : '🤍'} ${data.likes?.length || 0}
-          </button>
-        </div>
-        <h2 class="text-lg font-semibold text-gray-900">${escapeHtml(data.title)}</h2>
-        <p class="text-gray-700">${escapeHtml(data.description)}</p>
-        <div class="text-sm text-gray-500 flex justify-between">
-          <span>📍 ${escapeHtml(data.customLocation || "Unknown location")}</span>
-          <span>⏱️ ${timeAgo(data.createdAt?.seconds * 1000)}</span>
-        </div>
-        <div class="text-xs text-indigo-500">
-          ${escapeHtml(data.category)} • ${dist.toFixed(2)} km away • 
-          <a href="https://maps.google.com/?q=${data.latitude},${data.longitude}" target="_blank" rel="noopener" class="underline">View Map</a>
-        </div>
-        <button type="button" class="comment-toggle mt-2 text-indigo-500 text-sm" data-id="${data.id}">
-          💬 Comments (${data.comments?.length || 0})
-        </button>
-        <div class="comment-section hidden space-y-2 mt-2" data-id="${data.id}">
-          <div class="comments max-h-40 overflow-auto text-sm space-y-2"></div>
-          <div class="flex gap-2 mt-2">
-            <input class="comment-input flex-1 border rounded px-2 py-1 text-sm" placeholder="Write a comment..." />
-            <button type="button" class="send-comment bg-indigo-600 text-white px-3 py-1 rounded text-sm">Send</button>
-          </div>
-        </div>
-      `;
-                    postFeed.appendChild(card);
-                    shown++;
-
-                    // Attach handlers for this one card immediately (so Like/Comment work without waiting)
-                    attachHandlers();
-
-                    if (shown === filteredMessages.length) {
-                        if (shown === 0) {
-                            postFeed.innerHTML = `<div class="text-center text-gray-500 mt-10">No posts found for selected filters.</div>`;
-                        }
+                    try {
+                        await requestLocation();
+                    } catch {
+                        showLocationError();
                     }
-                }, index * 1); // 50ms stagger between posts (tweak as desired)
-            });
-        }
-
-
-        function updateTabs() {
-            msgTabBtn.classList.toggle("border-indigo-500", currentTab === "Messaging");
-            msgTabBtn.classList.toggle("border-transparent", currentTab !== "Messaging");
-            foodTabBtn.classList.toggle("border-indigo-500", currentTab === "Food Share");
-            foodTabBtn.classList.toggle("border-transparent", currentTab !== "Food Share");
-            if (currentTab === "Messaging") {
-                categoryFilter.classList.remove("hidden");
-            } else {
-                categoryFilter.classList.add("hidden");
+                }
             }
-        }
 
-        // -- ALL DYNAMIC BUTTONS: Like, Comment, Profile (robust, always runs after rendering) --
-        function attachHandlers() {
-            // LIKE
-            Array.from(document.getElementsByClassName('like-btn')).forEach(btn => {
-                btn.onclick = async () => {
-                    const id = btn.dataset.id;
-                    if (likeInProgress.has(id)) return;
-                    likeInProgress.add(id);
+            async function requestLocation() {
+                loadingEl.classList.remove('hidden');
+                locationRetry.classList.add('hidden');
+                postFeed.classList.add('opacity-40', 'pointer-events-none');
 
-                    if (!currentUser) {
-                        alert("Please login to like posts.");
-                        likeInProgress.delete(id);
+                async function checkPermission() {
+                    if (navigator.permissions) {
+                        try {
+                            const permissionStatus = await navigator.permissions.query({ name: 'geolocation' });
+                            if (permissionStatus.state === 'granted' || permissionStatus.state === 'prompt') {
+                                return await getActualLocation();
+                            }
+                            if (permissionStatus.state === 'denied') {
+                                await showLocationError();
+                                return await checkPermission();
+                            }
+                            permissionStatus.onchange = () => {
+                                if (permissionStatus.state === 'granted') {
+                                    getActualLocation();
+                                }
+                            };
+                        } catch {
+                            return await getActualLocation();
+                        }
+                    } else {
+                        return await getActualLocation();
+                    }
+                }
+
+                function getActualLocation() {
+                    return new Promise((resolve, reject) => {
+                        navigator.geolocation.getCurrentPosition(
+                            async (pos) => {
+                                userLat = pos.coords.latitude;
+                                userLon = pos.coords.longitude;
+                                sessionStorage.setItem('userLat', userLat);
+                                sessionStorage.setItem('userLon', userLon);
+                                await updateUserLocation(userLat, userLon);
+                                locationRetry.classList.add('hidden');
+                                loadingEl.classList.add('hidden');
+                                postFeed.classList.remove('opacity-40', 'pointer-events-none');
+                                if (!locationInitialized) {
+                                    locationInitialized = true;
+                                    startListeningMessages();
+                                } else {
+                                    renderMessages(cachedMessageData);
+                                }
+                                resolve();
+                            },
+                            async (err) => {
+                                if (err.code === err.PERMISSION_DENIED) {
+                                    await showLocationError();
+                                    resolve(await checkPermission());
+                                } else {
+                                    alert('Error retrieving location: ' + err.message);
+                                    reject(err);
+                                }
+                            }
+                        );
+                    });
+                }
+
+                await checkPermission();
+            }
+
+            function showLocationError() {
+                loadingEl.classList.add('hidden');
+                locationRetry.classList.remove('hidden');
+            }
+
+            tryAgainBtn.addEventListener('click', () => {
+                locationRetry.classList.add('hidden');
+                loadingEl.classList.remove('hidden');
+                postFeed.classList.remove('opacity-40', 'pointer-events-none');
+                getUserLocation();
+            });
+
+            onAuthStateChanged(auth, async (user) => {
+                if (!user) {
+                    window.location.href = 'index.html';
+                    return;
+                }
+                currentUser = user;
+                try {
+                    const profileSnap = await getDoc(doc(db, 'profiles', user.uid));
+                    if (!profileSnap.exists()) {
+                        window.location.href = 'profile.html';
                         return;
                     }
-                    try {
-                        const ref = doc(db, 'messages', id);
-                        const snap = await getDoc(ref);
-                        const d = snap.data();
-                        const userLiked = d.likes?.includes(currentUser.uid);
-                        const op = userLiked ? arrayRemove : arrayUnion;
-                        await updateDoc(ref, { likes: op(currentUser.uid) });
-
-                        // Refresh button state by re-rendering all
-                        renderMessages(cachedMessagesData);
-                    } catch (err) {
-                        console.error("Error updating likes:", err);
-                        alert("Failed to update like. Please try again.");
-                    } finally {
-                        likeInProgress.delete(id);
-                    }
-                };
+                    userProfile = profileSnap.data();
+                } catch {
+                    window.location.href = 'profile.html';
+                    return;
+                }
+                await getUserLocation();
             });
 
-            // COMMENT TOGGLE
-            Array.from(document.getElementsByClassName('comment-toggle')).forEach(btn => {
-                btn.onclick = async () => {
-                    const id = btn.dataset.id;
-                    const section = document.querySelector(`.comment-section[data-id="${id}"]`);
-                    section.classList.toggle('hidden');
-                    if (!section.classList.contains('hidden')) {
-                        const ref = doc(db, 'messages', id);
-                        const snap = await getDoc(ref);
-                        const comments = snap.data().comments || [];
-                        const commentsEl = section.querySelector('.comments');
-                        commentsEl.innerHTML = comments.map(c =>
-                            `<div><strong>${escapeHtml(c.name)}</strong>: ${escapeHtml(c.text)}</div>`).join('');
-                        const input = section.querySelector('.comment-input');
-                        if (input) input.focus();
-                    }
-                };
-            });
+            function calcDistance(lat1, lon1, lat2, lon2) {
+                const R = 6371;
+                const dLat = ((lat2 - lat1) * Math.PI) / 180;
+                const dLon = ((lon2 - lon1) * Math.PI) / 180;
+                const a =
+                    Math.sin(dLat / 2) ** 2 +
+                    Math.cos((lat1 * Math.PI) / 180) *
+                    Math.cos((lat2 * Math.PI) / 180) *
+                    Math.sin(dLon / 2) ** 2;
+                return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            }
 
-            // SEND COMMENT
-            Array.from(document.getElementsByClassName('send-comment')).forEach(btn => {
-                btn.onclick = async () => {
-                    const section = btn.closest('.comment-section');
-                    const input = section.querySelector('.comment-input');
-                    const text = input.value.trim();
-                    const id = section.dataset.id;
-                    const commentToggleBtn = document.querySelector(`.comment-toggle[data-id="${id}"]`);
-                    if (!text) return;
-                    if (!userProfile?.name) return location.href = 'profile.html';
-                    const comment = {
-                        uid: currentUser.uid,
-                        name: userProfile.name,
-                        text,
-                        timestamp: Date.now()
+            function formatTimeAgo(timestamp) {
+                if (!timestamp) return 'just now';
+                const seconds = Math.floor((Date.now() - timestamp) / 1000);
+                if (seconds < 30) return 'just now';
+                const intervals = [
+                    { label: 'year', seconds: 31536000 },
+                    { label: 'month', seconds: 2592000 },
+                    { label: 'day', seconds: 86400 },
+                    { label: 'hour', seconds: 3600 },
+                    { label: 'minute', seconds: 60 },
+                ];
+                for (const interval of intervals) {
+                    const count = Math.floor(seconds / interval.seconds);
+                    if (count > 0) return `${count} ${interval.label}${count !== 1 ? 's' : ''} ago`;
+                }
+                return 'just now';
+            }
+
+            function escapeHtml(text) {
+                if (!text) return '';
+                return text.replace(/[&<>"']/g, (ch) => {
+                    switch (ch) {
+                        case '&':
+                            return '&amp;';
+                        case '<':
+                            return '&lt;';
+                        case '>':
+                            return '&gt;';
+                        case '"':
+                            return '&quot;';
+                        case "'":
+                            return '&#39;';
+                        default:
+                            return ch;
+                    }
+                });
+            }
+
+            function startListeningMessages() {
+                if (unsubscribe) unsubscribe();
+                loadingEl.classList.remove('hidden');
+                postFeed.innerHTML = '';
+                const col = collection(db, 'messages');
+                unsubscribe = onSnapshot(
+                    col,
+                    (snapshot) => {
+                        cachedMessageData = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+                        renderMessages(cachedMessageData);
+                        loadingEl.classList.add('hidden');
+                    },
+                    (error) => {
+                        console.error('Realtime listener error:', error);
+                        loadingEl.classList.add('hidden');
+                        postFeed.innerHTML = `<div class="text-center text-red-600 mt-10">Failed to load posts.</div>`;
+                    }
+                );
+            }
+
+            function renderMessages(messages) {
+                if (userLat === null || userLon === null) {
+                    postFeed.innerHTML = `<div class="text-center text-yellow-600 mt-10">Location required.</div>`;
+                    return;
+                }
+
+                postFeed.innerHTML = '';
+                updateTabs();
+
+                const maxDistance = parseFloat(distanceSlider.value);
+                const selectedCategory = categoryFilter.value;
+                const now = Date.now();
+
+                const filtered = messages.filter((msg) => {
+                    const start = msg.scheduledAt?.seconds ? msg.scheduledAt.seconds * 1000 : 0;
+                    const end = msg.expiresAt?.seconds ? msg.expiresAt.seconds * 1000 : 0;
+                    if (now < start || now > end) return false;
+
+                    const dist = calcDistance(userLat, userLon, msg.latitude, msg.longitude);
+                    if (dist > (msg.distance ?? 1)) return false;
+                    if (dist > maxDistance) return false;
+
+                    if (currentTab === 'Messaging' && msg.category === 'Food Share') return false;
+                    if (currentTab === 'Food Share' && msg.category !== 'Food Share') return false;
+                    if (currentTab === 'Messaging' && selectedCategory !== 'All' && msg.category !== selectedCategory)
+                        return false;
+
+                    return true;
+                });
+
+                if (!filtered.length) {
+                    postFeed.innerHTML = `<div class="text-center text-gray-600 mt-10">No posts available.</div>`;
+                    return;
+                }
+
+                let index = 0;
+
+                function renderNext() {
+                    if (index >= filtered.length) return;
+
+                    const msg = filtered[index];
+                    const authorName = escapeHtml(msg.authorName || 'Unknown User');
+                    const distance = calcDistance(userLat, userLon, msg.latitude, msg.longitude);
+                    const liked = msg.likes?.includes(currentUser.uid);
+                    const imgTag = msg.imageUrl
+                        ? `<img src="${escapeHtml(msg.imageUrl)}" alt="Image" class="post-image mb-3" />`
+                        : '';
+
+                    const card = document.createElement('div');
+                    card.className = 'bg-white p-4 rounded-xl shadow hover:shadow-lg transition space-y-3';
+                    card.innerHTML = `
+            <div class="flex justify-between items-center">
+                <div>
+                    <strong>${authorName}</strong>
+                    <button class="view-profile text-indigo-600 ml-2 text-xs" data-uid="${msg.uid ?? ''}">View Profile</button>
+                </div>
+                <button class="like-btn text-sm ${liked ? 'text-red-600' : 'text-gray-400'}" data-id="${msg.id}" aria-label="Like button">
+                    ${liked ? '❤️' : '🤍'} ${msg.likes?.length ?? 0}
+                </button>
+            </div>
+            <h2 class="text-lg font-semibold text-gray-900">${escapeHtml(msg.title)}</h2>
+            ${imgTag}
+            <p class="text-gray-700">${escapeHtml(msg.description)}</p>
+            <div class="flex justify-between text-sm text-gray-500">
+                <span>📍 ${escapeHtml(msg.customLocation || 'Unknown Location')}</span>
+                <span>⏱️ ${formatTimeAgo(msg.createdAt?.seconds * 1000)}</span>
+            </div>
+            <div class="text-xs text-indigo-500">
+                ${escapeHtml(msg.category)} • ${distance.toFixed(2)} km away • 
+                <a href="https://maps.google.com/?q=${msg.latitude},${msg.longitude}" target="_blank" rel="noopener" class="underline">View Map</a>
+            </div>
+            <button class="comment-toggle mt-2 text-indigo-600 text-sm" data-id="${msg.id}">💬 Comments (${msg.comments?.length ?? 0})</button>
+            <div class="comment-section hidden space-y-2 mt-2" data-id="${msg.id}">
+                <div class="comments max-h-40 overflow-auto text-sm space-y-2"></div>
+                <div class="flex gap-2 mt-2">
+                    <input class="comment-input flex-1 border rounded px-2 py-1 text-sm" placeholder="Write a comment..." />
+                    <button class="send-comment bg-indigo-600 text-white px-3 py-1 rounded text-sm">Send</button>
+                </div>
+            </div>
+        `;
+                    postFeed.appendChild(card);
+                    attachHandlers();
+
+                    index++;
+                    setTimeout(renderNext, 20);
+                }
+
+                renderNext();
+            }
+
+
+            function updateTabs() {
+                msgTabBtn.classList.toggle('border-indigo-600', currentTab === 'Messaging');
+                msgTabBtn.classList.toggle('border-transparent', currentTab !== 'Messaging');
+                foodTabBtn.classList.toggle('border-indigo-600', currentTab === 'Food Share');
+                foodTabBtn.classList.toggle('border-transparent', currentTab !== 'Food Share');
+                if (currentTab === 'Messaging') {
+                    categoryFilter.classList.remove('hidden');
+                } else {
+                    categoryFilter.classList.add('hidden');
+                }
+            }
+
+            function attachHandlers() {
+                document.querySelectorAll('.like-btn').forEach((btn) => {
+                    btn.onclick = async () => {
+                        const id = btn.dataset.id;
+                        if (likeInProgress.has(id)) return;
+                        likeInProgress.add(id);
+                        if (!currentUser) {
+                            alert('Please log in to like posts.');
+                            likeInProgress.delete(id);
+                            return;
+                        }
+                        try {
+                            const ref = doc(db, 'messages', id);
+                            const snap = await getDoc(ref);
+                            const data = snap.data();
+                            const hasLiked = data.likes?.includes(currentUser.uid);
+                            const op = hasLiked ? arrayRemove(currentUser.uid) : arrayUnion(currentUser.uid);
+                            await updateDoc(ref, { likes: op });
+                            renderMessages(cachedMessageData);
+                        } catch {
+                            alert('Failed to update like.');
+                        } finally {
+                            likeInProgress.delete(id);
+                        }
                     };
-                    try {
-                        await updateDoc(doc(db, 'messages', id), { comments: arrayUnion(comment) });
-                        input.value = '';
-                        const snap = await getDoc(doc(db, 'messages', id));
-                        const comments = snap.data().comments || [];
-                        const commentsEl = section.querySelector('.comments');
-                        commentsEl.innerHTML = comments.map(c =>
-                            `<div><strong>${escapeHtml(c.name)}</strong>: ${escapeHtml(c.text)}</div>`).join('');
-                        if (commentToggleBtn)
-                            commentToggleBtn.textContent = `💬 Comments (${comments.length})`;
-                        input.focus();
-                    } catch (err) {
-                        console.error("Error adding comment:", err);
-                        alert("Failed to post comment. Please try again.");
-                    }
-                };
+                });
+
+                document.querySelectorAll('.comment-toggle').forEach((btn) => {
+                    btn.onclick = async () => {
+                        const id = btn.dataset.id;
+                        const section = document.querySelector(`.comment-section[data-id="${id}"]`);
+                        section.classList.toggle('hidden');
+                        if (!section.classList.contains('hidden')) {
+                            const snap = await getDoc(doc(db, 'messages', id));
+                            const comments = snap.data()?.comments || [];
+                            const commentsContainer = section.querySelector('.comments');
+                            commentsContainer.innerHTML = comments
+                                .map((c) => `<div><strong>${escapeHtml(c.name)}</strong>: ${escapeHtml(c.text)}</div>`)
+                                .join('');
+                            const input = section.querySelector('input.comment-input');
+                            if (input) input.focus();
+                        }
+                    };
+                });
+
+                document.querySelectorAll('.send-comment').forEach((btn) => {
+                    btn.onclick = async () => {
+                        const section = btn.closest('.comment-section');
+                        const input = section.querySelector('input.comment-input');
+                        const text = input.value.trim();
+                        if (!text) return;
+                        if (!userProfile?.name) {
+                            window.location.href = 'profile.html';
+                            return;
+                        }
+                        const id = section.dataset.id;
+                        const comment = {
+                            uid: currentUser.uid,
+                            name: userProfile.name,
+                            text,
+                            timestamp: Date.now(),
+                        };
+                        try {
+                            const ref = doc(db, 'messages', id);
+                            await updateDoc(ref, { comments: arrayUnion(comment) });
+                            input.value = '';
+                            const snap = await getDoc(ref);
+                            const comments = snap.data()?.comments || [];
+                            const commentsContainer = section.querySelector('.comments');
+                            commentsContainer.innerHTML = comments
+                                .map((c) => `<div><strong>${escapeHtml(c.name)}</strong>: ${escapeHtml(c.text)}</div>`)
+                                .join('');
+                            const toggleBtn = document.querySelector(`.comment-toggle[data-id="${id}"]`);
+                            if (toggleBtn) toggleBtn.textContent = `💬 Comments (${comments.length})`;
+                            input.focus();
+                        } catch {
+                            alert('Failed to post comment.');
+                        }
+                    };
+                });
+
+                document.querySelectorAll('.view-profile').forEach((btn) => {
+                    btn.onclick = (e) => {
+                        e.preventDefault();
+                        const uid = btn.dataset.uid;
+                        if (uid) window.location.href = `profile.html?uid=${uid}`;
+                    };
+                });
+            }
+
+            msgTabBtn.addEventListener('click', () => {
+                if (currentTab !== 'Messaging') {
+                    currentTab = 'Messaging';
+                    updateTabs();
+                    renderMessages(cachedMessageData);
+                }
             });
 
-            // VIEW PROFILE
-            Array.from(document.getElementsByClassName('view-profile')).forEach(btn => {
-                btn.onclick = e => {
-                    e.preventDefault();
-                    const uid = btn.dataset.uid;
-                    if (uid) location.href = `profile.html?uid=${uid}`;
-                };
+            foodTabBtn.addEventListener('click', () => {
+                if (currentTab !== 'Food Share') {
+                    currentTab = 'Food Share';
+                    updateTabs();
+                    renderMessages(cachedMessageData);
+                }
             });
-        }
 
-        // Tab switching
-        msgTabBtn.addEventListener("click", () => {
-            if (currentTab !== "Messaging") {
-                currentTab = "Messaging";
-                updateTabs();
-                renderMessages(cachedMessagesData);
-            }
+            distanceSlider.addEventListener('input', () => {
+                distanceValue.textContent = `${distanceSlider.value} km`;
+                clearTimeout(window.distanceTimeout);
+                window.distanceTimeout = setTimeout(() => {
+                    renderMessages(cachedMessageData);
+                }, 300);
+            });
+
+            categoryFilter.addEventListener('change', () => {
+                renderMessages(cachedMessageData);
+            });
+
+            updateTabs();
         });
-        foodTabBtn.addEventListener("click", () => {
-            if (currentTab !== "Food Share") {
-                currentTab = "Food Share";
-                updateTabs();
-                renderMessages(cachedMessagesData);
-            }
-        });
-        distanceSlider.addEventListener("input", () => {
-            distanceValue.textContent = `${distanceSlider.value} km`;
-            clearTimeout(window.distanceTimeout);
-            window.distanceTimeout = setTimeout(() => {
-                renderMessages(cachedMessagesData);
-            }, 300);
-        });
-        categoryFilter.addEventListener("change", () => {
-            renderMessages(cachedMessagesData);
-        });
-        updateTabs();
     </script>
+
+
+
 
 </body>
 

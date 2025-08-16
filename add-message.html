@@ -2,6 +2,7 @@
 <html lang="en">
 
 <head>
+    <link rel="icon" href="Images/favicon.ico" type="image/x-icon">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Add Message | NearbyNow</title>
@@ -12,7 +13,6 @@
 </head>
 
 <body class="bg-gray-100 text-gray-800 flex flex-col md:flex-row min-h-screen">
-
     <!-- Sidebar for Desktop -->
     <aside class="hidden md:flex md:flex-col bg-white w-50 p-6 shadow-lg space-y-6">
         <div class="flex items-center space-x-3">
@@ -38,7 +38,7 @@
         <!-- Hamburger button -->
         <button id="hamburgerBtn" aria-label="Menu" aria-expanded="false"
             class="text-gray-800 text-3xl p-2 rounded-full hover:bg-gray-200 transition duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            &#9776; <!-- hamburger icon -->
+            &#9776;
         </button>
 
         <!-- Dropdown menu (hidden by default) -->
@@ -58,7 +58,7 @@
                 <input type="text" id="title" placeholder="Title" required class="w-full p-3 border rounded" />
                 <textarea id="description" rows="4" placeholder="Description" required
                     class="w-full p-3 border rounded"></textarea>
-                <input type="text" id="customLocation" placeholder="Custom Location (optional)"
+                <input type="text" id="customLocation" placeholder="Custom Location"
                     class="w-full p-3 border rounded" />
 
                 <div>
@@ -84,8 +84,23 @@
                     <option value="Service">Service</option>
                 </select>
 
-                <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded hover:bg-blue-700">Post
-                    Message</button>
+                <div>
+                    <label for="scheduleTime" class="block text-sm font-medium text-gray-700 mb-1">Schedule Post
+                        (optional)</label>
+                    <input type="datetime-local" id="scheduleTime" class="w-full p-3 border rounded" min="" />
+                    <p class="text-xs text-gray-500 mt-1">Leave empty to post immediately</p>
+                </div>
+
+                <!-- Added Image Input -->
+                <div>
+                    <label for="postImage" class="block text-sm font-medium text-gray-700 mb-1">Post Image
+                        (optional)</label>
+                    <input type="file" id="postImage" accept="image/*" class="w-full p-3 border rounded" />
+                </div>
+
+                <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded hover:bg-blue-700">
+                    Post Message
+                </button>
             </form>
 
             <p id="posting" class="text-center mt-4 text-blue-600 font-medium hidden"><span class="animate-pulse">📤
@@ -113,7 +128,6 @@
         <a href="profile.html" class="flex flex-col items-center gap-0.5" aria-label="Profile">
             <img src="Images/c60ea00b55471c5a57ce5109dcd2f7df.png" alt="Profile" class="h-8 w-8" />
         </a>
-
     </nav>
 
     <!-- Firebase & JS -->
@@ -128,35 +142,34 @@
             getDoc,
             getDocs
         } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-
-        // Initialize EmailJS Public Key globally (emailjs is loaded as a global script)
         emailjs.init("F8YJAVO_mmfS3h3Gz");
 
         const EMAILJS_SERVICE_ID = "service_ywz50ea";
         const EMAILJS_TEMPLATE_ID = "template_ggzqzcl";
 
         const form = document.getElementById('messageForm');
+        const postImage = document.getElementById('postImage');
         const status = document.getElementById('status');
         const posting = document.getElementById('posting');
         const error = document.getElementById('error');
+        const scheduleInput = document.getElementById('scheduleTime');
 
         let currentUser = null;
-        let userName = null; // Will hold name fetched from profiles collection
+        let userName = null;
         let cachedLocation = null;
         const hamburgerBtn = document.getElementById('hamburgerBtn');
         const hamburgerMenu = document.getElementById('hamburgerMenu');
         const logoutBtn = document.getElementById('logoutBtn');
 
-        // Toggle menu visibility
         hamburgerBtn.addEventListener('click', () => {
             const expanded = hamburgerBtn.getAttribute('aria-expanded') === 'true';
             hamburgerBtn.setAttribute('aria-expanded', !expanded);
             hamburgerMenu.classList.toggle('hidden');
         });
 
-        // Close menu if clicking outside
         document.addEventListener('click', (e) => {
             if (!hamburgerMenu.contains(e.target) && e.target !== hamburgerBtn) {
                 hamburgerMenu.classList.add('hidden');
@@ -164,17 +177,22 @@
             }
         });
 
-        // Logout handler
         logoutBtn.addEventListener('click', async () => {
             try {
                 await auth.signOut();
-                window.location.href = 'index.html'; // redirect after logout
+                window.location.href = 'index.html';
             } catch (error) {
                 alert('Logout failed: ' + error.message);
             }
         });
 
-        // Load location from sessionStorage
+        function setMinScheduleTime() {
+            const now = new Date();
+            const formatted = now.toISOString().slice(0, 16);
+            if (scheduleInput) scheduleInput.min = formatted;
+        }
+        setMinScheduleTime();
+
         function loadCachedLocation() {
             const lat = sessionStorage.getItem('userLat');
             const lon = sessionStorage.getItem('userLon');
@@ -188,7 +206,6 @@
             return false;
         }
 
-        // Request location once and cache it
         function requestLocationOnce() {
             return new Promise((resolve, reject) => {
                 navigator.geolocation.getCurrentPosition(
@@ -205,19 +222,6 @@
             });
         }
 
-        // Calculate distance between two lat/lon points in km using Haversine formula
-        function getDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371; // Radius of earth in km
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a =
-                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                Math.sin(dLon / 2) * Math.sin(dLon / 2);
-            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        }
-
-        // Fetch the user name from profiles collection by UID
         async function fetchUserName(uid) {
             try {
                 const profileDocRef = doc(db, 'profiles', uid);
@@ -233,22 +237,15 @@
             }
         }
 
-
-        // Send email only to users within distance
         async function sendEmailToAll(name, title, description, category, messageCoords, maxDistanceKm, customLocationStr) {
             try {
                 const profilesSnapshot = await getDocs(collection(db, 'profiles'));
                 const emailPromises = [];
-
                 profilesSnapshot.forEach(profileDoc => {
                     const profileData = profileDoc.data();
                     const recipientEmail = profileData.email;
                     const profileUid = profileDoc.id;
-
-                    // Skip sender
                     if (profileUid === currentUser.uid) return;
-
-                    // Ensure valid coordinates to calculate distance
                     if (recipientEmail && profileData.latitude !== undefined && profileData.longitude !== undefined) {
                         const dist = getDistance(
                             messageCoords.latitude,
@@ -256,7 +253,6 @@
                             profileData.latitude,
                             profileData.longitude
                         );
-
                         if (dist <= maxDistanceKm) {
                             const templateParams = {
                                 to_email: recipientEmail,
@@ -266,7 +262,6 @@
                                 message_description: description,
                                 Category: category
                             };
-
                             emailPromises.push(
                                 emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
                                     .catch(err => {
@@ -276,7 +271,6 @@
                         }
                     }
                 });
-
                 await Promise.all(emailPromises);
                 console.log("Emails sent successfully to all in range except sender.");
             } catch (err) {
@@ -284,19 +278,13 @@
             }
         }
 
-
-
-
         onAuthStateChanged(auth, async (user) => {
             if (!user) {
                 window.location.href = "index.html";
                 return;
             }
             currentUser = user;
-
-            // Fetch the user name after login
             userName = await fetchUserName(currentUser.uid);
-
             if (!loadCachedLocation()) {
                 try {
                     await requestLocationOnce();
@@ -311,22 +299,31 @@
             error.classList.add("hidden");
             status.classList.add("hidden");
 
+            // Show loading instantly before any async operation
+            posting.classList.remove("hidden");
+
             const title = form.title.value.trim();
             const description = form.description.value.trim();
             const customLocation = form.customLocation.value.trim();
             const distance = parseFloat(form.distance.value);
             const expiry = parseInt(form.expiry.value);
             const category = form.category.value;
+            const scheduleTimeVal = scheduleInput ? scheduleInput.value : null;
 
             if (!title || !description || !category) {
+                posting.classList.add("hidden");
                 alert("Please fill in all required fields.");
                 return;
             }
+
             if (distance > 20 || expiry > 24 || distance < 0.1 || expiry < 1) {
+                posting.classList.add("hidden");
                 alert("Max distance is 20km and max expiry time is 24 hours.");
                 return;
             }
+
             if (!cachedLocation) {
+                posting.classList.add("hidden");
                 alert("Getting your location. Please wait and try again.");
                 try {
                     await requestLocationOnce();
@@ -336,9 +333,36 @@
                 return;
             }
 
-            try {
-                posting.classList.remove("hidden");
+            let scheduledAt = null;
+            if (scheduleTimeVal) {
+                const dt = new Date(scheduleTimeVal);
+                if (dt.getTime() < Date.now()) {
+                    posting.classList.add("hidden");
+                    alert("Scheduled time cannot be in the past.");
+                    return;
+                }
+                scheduledAt = Timestamp.fromDate(dt);
+            } else {
+                scheduledAt = Timestamp.fromDate(new Date());
+            }
 
+            // OPTIONAL IMAGE UPLOAD HANDLING
+            let imageUrl = "";
+            if (postImage.files[0]) {
+                try {
+                    const storage = getStorage();
+                    const imageFile = postImage.files[0];
+                    const storageRef = ref(storage, `postImages/${currentUser.uid}_${Date.now()}_${imageFile.name}`);
+                    await uploadBytes(storageRef, imageFile);
+                    imageUrl = await getDownloadURL(storageRef);
+                } catch (uploadError) {
+                    posting.classList.add("hidden");
+                    alert("Image upload failed. Please try again.");
+                    return;
+                }
+            }
+
+            try {
                 await addDoc(collection(db, "messages"), {
                     uid: currentUser.uid,
                     authorName: userName,
@@ -352,26 +376,30 @@
                     likes: [],
                     comments: [],
                     createdAt: serverTimestamp(),
-                    expiresAt: Timestamp.fromDate(new Date(Date.now() + expiry * 3600 * 1000))
+                    expiresAt: Timestamp.fromDate(new Date(scheduledAt.toDate().getTime() + expiry * 3600 * 1000)),
+                    scheduledAt,
+                    imageUrl // save image URL if uploaded
                 });
 
-                // Send email only to users who were within the visible distance range
-                await sendEmailToAll(userName, title, description, category, cachedLocation, distance, customLocation);
+                if (!scheduleTimeVal) {
+                    await sendEmailToAll(userName, title, description, category, cachedLocation, distance, customLocation);
+                }
 
                 form.reset();
-                posting.classList.add("hidden");
                 status.classList.remove("hidden");
+                setMinScheduleTime();
 
                 setTimeout(() => status.classList.add("hidden"), 3000);
             } catch (err) {
-                posting.classList.add("hidden");
                 error.classList.remove("hidden");
                 setTimeout(() => error.classList.add("hidden"), 4000);
                 console.error("Error posting message:", err);
+            } finally {
+                posting.classList.add("hidden");
             }
         });
-    </script>
 
+    </script>
 </body>
 
 </html>
