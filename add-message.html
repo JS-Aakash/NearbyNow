@@ -7,13 +7,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Add Message | NearbyNow</title>
     <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- EmailJS SDK v4 (latest) loaded as normal script -->
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
 
 <body class="bg-gray-100 text-gray-800 flex flex-col md:flex-row min-h-screen">
-    <!-- Sidebar for Desktop -->
     <aside class="hidden md:flex md:flex-col bg-white w-50 p-6 shadow-lg space-y-6">
         <div class="flex items-center space-x-3">
             <img src="Images/profile.png" class="w-11 h-11 rounded-full" alt="Profile" />
@@ -30,18 +27,15 @@
         </nav>
     </aside>
 
-    <!-- Header for Mobile -->
     <header class="md:hidden bg-white p-4 flex justify-between items-center shadow relative">
         <img src="Images/profile.png" alt="" class="w-9 h-9 rounded-full" />
         <h1 class="text-lg font-bold">NearbyNow</h1>
 
-        <!-- Hamburger button -->
         <button id="hamburgerBtn" aria-label="Menu" aria-expanded="false"
             class="text-gray-800 text-3xl p-2 rounded-full hover:bg-gray-200 transition duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
             &#9776;
         </button>
 
-        <!-- Dropdown menu (hidden by default) -->
         <div id="hamburgerMenu"
             class="hidden absolute top-full right-4 mt-2 w-36 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
             <a href="settings.html"
@@ -51,7 +45,6 @@
         </div>
     </header>
 
-    <!-- Main Content -->
     <main class="flex-1 px-4 py-6 md:py-10">
         <div class="max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-md">
             <form id="messageForm" class="space-y-4">
@@ -91,7 +84,6 @@
                     <p class="text-xs text-gray-500 mt-1">Leave empty to post immediately</p>
                 </div>
 
-                <!-- Added Image Input -->
                 <div>
                     <label for="postImage" class="block text-sm font-medium text-gray-700 mb-1">Post Image
                         (optional)</label>
@@ -110,7 +102,6 @@
         </div>
     </main>
 
-    <!-- Bottom Navigation (Mobile) -->
     <nav
         class="md:hidden fixed bottom-0 left-0 right-0 bg-white flex justify-around py-2 text-indigo-700 text-xl font-semibold z-50">
         <a href="home.html" class="flex flex-col items-center gap-0.5" aria-label="Home">
@@ -130,7 +121,6 @@
         </a>
     </nav>
 
-    <!-- Firebase & JS -->
     <script type="module">
         import { db, auth } from './firebase-config.js';
         import {
@@ -299,7 +289,6 @@
             error.classList.add("hidden");
             status.classList.add("hidden");
 
-            // Show loading instantly before any async operation
             posting.classList.remove("hidden");
 
             const title = form.title.value.trim();
@@ -346,7 +335,6 @@
                 scheduledAt = Timestamp.fromDate(new Date());
             }
 
-            // OPTIONAL IMAGE UPLOAD HANDLING
             let imageUrl = "";
             if (postImage.files[0]) {
                 try {
@@ -378,7 +366,7 @@
                     createdAt: serverTimestamp(),
                     expiresAt: Timestamp.fromDate(new Date(scheduledAt.toDate().getTime() + expiry * 3600 * 1000)),
                     scheduledAt,
-                    imageUrl // save image URL if uploaded
+                    imageUrl
                 });
 
                 if (!scheduleTimeVal) {
@@ -398,7 +386,6 @@
                 posting.classList.add("hidden");
             }
         });
-
     </script>
 </body>
 

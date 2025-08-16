@@ -1,8 +1,8 @@
-<img src="Images/profile.png" width="120" style="border-radius: 1rem; margin-bottom: 1.5rem;" alt="NearbyNow logo">
+<div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
 
+&nbsp; <h1 style="margin: 0; font-size: 2rem;">🛰️ NearbyNow – Hyperlocal Community Messaging Web App</h1>
 
-
-\# 🛰️ NearbyNow – Hyperlocal Community Messaging Web App
+</div>
 
 
 
@@ -68,7 +68,7 @@ A modern \*\*location-based community platform\*\* for sharing, caring, and conn
 
 | HTML, Tailwind  | Firebase Firestore | Firebase Storage |
 
-| JavaScript (ES6)| Firebase Auth      | EmailJS          |
+| JavaScript      | Firebase Auth      | EmailJS          |
 
 
 
@@ -82,13 +82,7 @@ A modern \*\*location-based community platform\*\* for sharing, caring, and conn
 
 1\. \*\*Clone the repository\*\*  
 
-git clone <repository-url>
-
-cd <repository-folder>
-
-
-
-text
+git clone https://github.com/JS-Aakash/NearbyNow.git
 
 
 
@@ -192,7 +186,7 @@ MIT License
 
 \*\*Questions or feedback?\*\*  
 
-Reach out at \[your-email@example.com](mailto:your-email@example.com)
+Reach out at \[nearbynow22@example.com](mailto:nearbynow22@gmail.com)
 
 
 
@@ -201,4 +195,6 @@ Reach out at \[your-email@example.com](mailto:your-email@example.com)
 
 
 <sub>Built with ❤️ for real communities.</sub>
+
+
 
