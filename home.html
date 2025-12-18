@@ -2,6 +2,7 @@
 <html lang="en">
 
 <head>
+    <link rel="icon" href="Images/favicon.ico" type="image/x-icon">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>NearbyNow</title>
@@ -11,36 +12,111 @@
             theme: {
                 extend: {
                     animation: {
-                        fade: 'fadeIn 0.2s ease-in-out',
+                        fade: 'fadeIn 0.3s ease-in-out',
+                        slideUp: 'slideUp 0.4s ease-out',
+                        shimmer: 'shimmer 2s infinite',
+                        bounce: 'bounce 1s infinite',
                     },
                     keyframes: {
                         fadeIn: {
-                            from: { opacity: 0 },
-                            to: { opacity: 1 },
+                            from: { opacity: 0, transform: 'translateY(10px)' },
+                            to: { opacity: 1, transform: 'translateY(0)' },
+                        },
+                        slideUp: {
+                            from: { opacity: 0, transform: 'translateY(20px)' },
+                            to: { opacity: 1, transform: 'translateY(0)' },
+                        },
+                        shimmer: {
+                            '0%': { backgroundPosition: '-1000px 0' },
+                            '100%': { backgroundPosition: '1000px 0' },
                         },
                     },
                 },
             },
         };
     </script>
+    <style>
+        /* Category color schemes */
+        .category-community {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .category-emergency {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .category-request {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .category-service {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+
+        .category-food {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+
+        /* Glassmorphism effect */
+        .glass {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+
+        /* Smooth transitions */
+        * {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        /* Card hover effect */
+        .post-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Skeleton loader */
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 1000px 100%;
+            animation: shimmer 2s infinite;
+        }
+    </style>
 </head>
 
 <body class="bg-gray-100 min-h-screen flex flex-col md:flex-row">
 
     <!-- Sidebar -->
-    <aside class="hidden md:flex md:flex-col bg-white w-52 p-6 shadow-lg space-y-6">
-        <div class="flex items-center space-x-3">
-            <img src="Images/profile.png" alt="Profile" class="w-11 h-11 rounded-full" />
-            <span class="text-lg font-bold">NearbyNow</span>
+    <aside
+        class="hidden md:flex md:flex-col bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 w-64 p-6 shadow-2xl space-y-6 text-white">
+        <div class="flex items-center space-x-3 bg-white/20 backdrop-blur-sm p-3 rounded-xl">
+            <img src="Images/profile.png" alt="Profile" class="w-12 h-12 rounded-full ring-2 ring-white shadow-lg" />
+            <span class="text-xl font-bold">NearbyNow</span>
         </div>
-        <nav class="space-y-5 text-base">
-            <a href="home.html" class="flex items-center gap-2 hover:text-indigo-600 font-medium">Home</a>
-            <a href="add-message.html" class="flex items-center gap-2 hover:text-indigo-600 font-medium">Add Post</a>
+        <nav class="space-y-3 text-base">
+            <a href="home.html"
+                class="flex items-center gap-3 hover:bg-white/20 p-3 rounded-lg font-medium transition-all hover:translate-x-1">
+                <span class="text-xl">🏠</span> Home
+            </a>
+            <a href="add-message.html"
+                class="flex items-center gap-3 hover:bg-white/20 p-3 rounded-lg font-medium transition-all hover:translate-x-1">
+                <span class="text-xl">➕</span> Add Post
+            </a>
             <a href="notifications.html"
-                class="flex items-center gap-2 hover:text-indigo-600 font-medium">Notifications</a>
-            <a href="profile.html" class="flex items-center gap-2 hover:text-indigo-600 font-medium">Profile</a>
-            <a href="settings.html" class="flex items-center gap-2 hover:text-indigo-600 font-medium">Settings</a>
-            <a href="index.html" class="flex items-center gap-2 hover:text-indigo-600 font-medium">Logout</a>
+                class="flex items-center gap-3 hover:bg-white/20 p-3 rounded-lg font-medium transition-all hover:translate-x-1">
+                <span class="text-xl">🔔</span> Notifications
+            </a>
+            <a href="profile.html"
+                class="flex items-center gap-3 hover:bg-white/20 p-3 rounded-lg font-medium transition-all hover:translate-x-1">
+                <span class="text-xl">👤</span> Profile
+            </a>
+            <a href="settings.html"
+                class="flex items-center gap-3 hover:bg-white/20 p-3 rounded-lg font-medium transition-all hover:translate-x-1">
+                <span class="text-xl">⚙️</span> Settings
+            </a>
+            <a href="index.html"
+                class="flex items-center gap-3 hover:bg-white/20 p-3 rounded-lg font-medium transition-all hover:translate-x-1">
+                <span class="text-xl">🚪</span> Logout
+            </a>
         </nav>
     </aside>
 
@@ -69,30 +145,37 @@
         </header>
 
         <!-- Tabs -->
-        <div class="bg-white flex justify-around text-sm font-semibold shadow">
+        <div class="bg-gradient-to-r from-indigo-50 to-purple-50 flex justify-around text-sm font-bold shadow-md">
             <button id="msgTab" type="button"
-                class="tab-btn py-3 w-1/2 border-b-4 border-indigo-500 text-gray-900 transition">Nearby
-                Messaging</button>
+                class="tab-btn py-4 w-1/2 border-b-4 border-indigo-600 text-indigo-600 transition-all hover:bg-white/50 relative">
+                <span class="relative z-10">💬 Nearby Messaging</span>
+            </button>
             <button id="foodTab" type="button"
-                class="tab-btn py-3 w-1/2 border-b-4 border-transparent text-gray-600 transition">Food Share</button>
+                class="tab-btn py-4 w-1/2 border-b-4 border-transparent text-gray-500 transition-all hover:bg-white/50 relative">
+                <span class="relative z-10">🍔 Food Share</span>
+            </button>
         </div>
 
         <!-- Filters -->
         <div id="filterBar"
-            class="p-4 bg-white shadow flex flex-wrap gap-3 items-center justify-between text-sm sm:flex-nowrap">
-            <select id="categoryFilter" class="border px-2 py-1 rounded hidden">
-                <option value="All">Category: All</option>
-                <option value="Community Msg">Community Msg</option>
-                <option value="Emergency">Emergency</option>
-                <option value="Request">Request</option>
-                <option value="Service">Service</option>
+            class="p-4 bg-gradient-to-r from-purple-50 via-pink-50 to-indigo-50 shadow-lg flex flex-wrap gap-3 items-center justify-between text-sm sm:flex-nowrap">
+            <select id="categoryFilter"
+                class="border-2 border-indigo-200 px-4 py-2 rounded-xl font-semibold text-indigo-700 bg-white shadow-sm hover:border-indigo-400 transition-all hidden focus:ring-2 focus:ring-indigo-300">
+                <option value="All">🌟 All Categories</option>
+                <option value="Community Msg">💜 Community</option>
+                <option value="Emergency">🚨 Emergency</option>
+                <option value="Request">🙏 Request</option>
+                <option value="Service">🔧 Service</option>
             </select>
 
-            <div class="flex items-center gap-1 ml-auto">
+            <div class="flex items-center gap-2 ml-auto bg-white px-4 py-2 rounded-xl shadow-md">
                 <label for="distanceFilter"
-                    class="text-sm font-medium whitespace-nowrap hidden sm:block">Distance:</label>
-                <input type="range" id="distanceFilter" min="0.1" max="20" step="0.1" value="1" class="w-28 sm:w-32" />
-                <span id="distanceValue" class="text-sm font-medium whitespace-nowrap">1 km</span>
+                    class="text-sm font-bold whitespace-nowrap text-indigo-700 hidden sm:block">📍 Distance:</label>
+                <input type="range" id="distanceFilter" min="0.1" max="20" step="0.1" value="1"
+                    class="w-28 sm:w-32 accent-indigo-600" />
+                <span id="distanceValue"
+                    class="text-sm font-bold whitespace-nowrap text-indigo-600 bg-indigo-100 px-3 py-1 rounded-full">1
+                    km</span>
             </div>
         </div>
 
@@ -117,7 +200,18 @@
         </div>
 
         <!-- Loading Indicator -->
-        <div id="loading" class="text-center text-gray-500 py-6 hidden">Loading...</div>
+        <div id="loading" class="flex flex-col items-center py-12">
+            <div class="relative">
+                <div class="h-16 w-16 rounded-full border-4 border-gray-200"></div>
+                <div
+                    class="absolute top-0 left-0 h-16 w-16 rounded-full border-4 border-t-indigo-600 border-r-purple-500 border-b-pink-500 border-l-indigo-600 animate-spin">
+                </div>
+            </div>
+            <span
+                class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 font-bold text-xl mt-4 animate-pulse">Finding
+                Nearby Posts...</span>
+        </div>
+
 
         <!-- Posts Feed -->
         <section id="postFeed" class="p-4 space-y-4 overflow-auto flex-1 pb-24 animate-fade"></section>
@@ -155,45 +249,43 @@
             updateDoc,
             arrayUnion,
             arrayRemove,
-            onSnapshot
+            onSnapshot,
         } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
         import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
-        // Globals
-        let currentTab = "Messaging";
-        let userLat = null, userLon = null;
+        let currentTab = 'Messaging';
+        let userLat = null,
+            userLon = null;
         let locationInitialized = false;
-        let currentUser = null, userProfile = null;
+        let currentUser = null,
+            userProfile = null;
         let cachedMessagesData = [];
         const likeInProgress = new Set();
 
-        // DOM elements
-        const msgTabBtn = document.getElementById("msgTab");
-        const foodTabBtn = document.getElementById("foodTab");
-        const categoryFilter = document.getElementById("categoryFilter");
-        const distanceSlider = document.getElementById("distanceFilter");
-        const distanceValue = document.getElementById("distanceValue");
-        const postFeed = document.getElementById("postFeed");
-        const loadingEl = document.getElementById("loading");
-        const locationRetry = document.getElementById("locationRetry");
-        const tryAgainBtn = document.getElementById("tryAgainBtn");
+        const msgTabBtn = document.getElementById('msgTab');
+        const foodTabBtn = document.getElementById('foodTab');
+        const categoryFilter = document.getElementById('categoryFilter');
+        const distanceSlider = document.getElementById('distanceFilter');
+        const distanceValue = document.getElementById('distanceValue');
+        const postFeed = document.getElementById('postFeed');
+        const loadingEl = document.getElementById('loading');
+        const locationRetry = document.getElementById('locationRetry');
+        const tryAgainBtn = document.getElementById('tryAgainBtn');
         const hamburgerBtn = document.getElementById('hamburgerBtn');
         const hamburgerMenu = document.getElementById('hamburgerMenu');
         const logoutBtn = document.getElementById('logoutBtn');
 
         let unsubscribeMessages = null;
 
-        // --------- Handle full reload detection for all browsers ----------
         let isReload = false;
         if (
-            (performance.getEntriesByType && performance.getEntriesByType("navigation")[0]?.type === "reload") ||
+            (performance.getEntriesByType &&
+                performance.getEntriesByType('navigation')[0]?.type === 'reload') ||
             (performance.navigation && performance.navigation.type === 1)
         ) {
             isReload = true;
         }
-        // -----------------------------------------------------------------
 
-        // Hamburger menu toggle handlers
         hamburgerBtn.addEventListener('click', () => {
             const expanded = hamburgerBtn.getAttribute('aria-expanded') === 'true';
             hamburgerBtn.setAttribute('aria-expanded', !expanded);
@@ -214,19 +306,30 @@
             }
         });
 
-        // --------- Location logic: clear cache & get new coords only on reload ---------
+        async function updateUserLocationInProfile(lat, lon) {
+            if (currentUser && typeof lat === 'number' && typeof lon === 'number') {
+                try {
+                    await updateDoc(doc(db, 'profiles', currentUser.uid), {
+                        latitude: lat,
+                        longitude: lon,
+                    });
+                } catch (e) {
+                    console.warn('Could not update user location in profile:', e.message);
+                }
+            }
+        }
+
         async function getUserLocationIfNeeded() {
-            // On reload (includes swipe/pull-to-refresh), clear stored coords to force prompt
             if (isReload) {
                 sessionStorage.removeItem('userLat');
                 sessionStorage.removeItem('userLon');
             }
-            // Otherwise, only prompt if not cached in this session
             const lat = sessionStorage.getItem('userLat');
             const lon = sessionStorage.getItem('userLon');
             if (lat && lon) {
                 userLat = parseFloat(lat);
                 userLon = parseFloat(lon);
+                await updateUserLocationInProfile(userLat, userLon);
                 locationInitialized = true;
                 startListeningMessages();
             } else {
@@ -235,15 +338,20 @@
         }
 
         async function requestLocation() {
-            loadingEl.classList.remove("hidden");
-            locationRetry.classList.add("hidden");
-            postFeed.classList.add("opacity-40", "pointer-events-none");
+            loadingEl.classList.remove('hidden');
+            locationRetry.classList.add('hidden');
+            postFeed.classList.add('opacity-40', 'pointer-events-none');
 
             async function checkPermissionStatus() {
                 if (navigator.permissions) {
                     try {
-                        const permissionStatus = await navigator.permissions.query({ name: 'geolocation' });
-                        if (permissionStatus.state === 'granted' || permissionStatus.state === 'prompt') {
+                        const permissionStatus = await navigator.permissions.query({
+                            name: 'geolocation',
+                        });
+                        if (
+                            permissionStatus.state === 'granted' ||
+                            permissionStatus.state === 'prompt'
+                        ) {
                             return await getLocation();
                         } else if (permissionStatus.state === 'denied') {
                             await showPermissionUI();
@@ -265,31 +373,29 @@
             function getLocation() {
                 return new Promise((resolve, reject) => {
                     navigator.geolocation.getCurrentPosition(
-                        async (pos) => {
+                        async pos => {
                             userLat = pos.coords.latitude;
                             userLon = pos.coords.longitude;
-                            sessionStorage.setItem("userLat", userLat);
-                            sessionStorage.setItem("userLon", userLon);
-
-                            locationRetry.classList.add("hidden");
-                            loadingEl.classList.add("hidden");
-                            postFeed.classList.remove("opacity-40", "pointer-events-none");
-                            // If first load, start listening Firestore
+                            sessionStorage.setItem('userLat', userLat);
+                            sessionStorage.setItem('userLon', userLon);
+                            await updateUserLocationInProfile(userLat, userLon);
+                            locationRetry.classList.add('hidden');
+                            loadingEl.classList.add('hidden');
+                            postFeed.classList.remove('opacity-40', 'pointer-events-none');
                             if (!locationInitialized) {
                                 locationInitialized = true;
                                 startListeningMessages();
                             } else {
-                                // If refreshing location mid-session, rerender
                                 renderMessages(cachedMessagesData);
                             }
                             resolve();
                         },
-                        async (err) => {
+                        async err => {
                             if (err.code === err.PERMISSION_DENIED) {
                                 await showPermissionUI();
                                 resolve(await checkPermissionStatus());
                             } else {
-                                alert("Error retrieving location: " + err.message);
+                                alert('Error retrieving location: ' + err.message);
                                 reject(err);
                             }
                         }
@@ -297,11 +403,11 @@
                 });
             }
             function showPermissionUI() {
-                return new Promise((resolve) => {
-                    locationRetry.classList.remove("hidden");
+                return new Promise(resolve => {
+                    locationRetry.classList.remove('hidden');
                     tryAgainBtn.onclick = () => {
-                        locationRetry.classList.add("hidden");
-                        loadingEl.classList.remove("hidden");
+                        locationRetry.classList.add('hidden');
+                        loadingEl.classList.remove('hidden');
                         resolve();
                     };
                     tryAgainBtn.focus();
@@ -310,26 +416,24 @@
             await checkPermissionStatus();
         }
 
-        // ----------------- Firebase Auth, location and Firestore start-up -----------------
         onAuthStateChanged(auth, async user => {
             if (!user) {
-                window.location.href = "index.html";
+                window.location.href = 'index.html';
                 return;
             }
             currentUser = user;
             try {
                 const profileSnap = await getDoc(doc(db, 'profiles', user.uid));
                 if (!profileSnap.exists()) {
-                    return window.location.href = 'profile.html';
+                    return (window.location.href = 'profile.html');
                 }
                 userProfile = profileSnap.data();
             } catch {
-                return window.location.href = 'profile.html';
+                return (window.location.href = 'profile.html');
             }
             await getUserLocationIfNeeded();
         });
 
-        // ----------------- Core functions for feed and UI below -----------------
         function getDistance(lat1, lon1, lat2, lon2) {
             const R = 6371;
             const dLat = ((lat2 - lat1) * Math.PI) / 180;
@@ -342,55 +446,62 @@
             return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         }
         function timeAgo(timestamp) {
-            if (!timestamp) return "just now";
+            if (!timestamp) return 'just now';
             const seconds = Math.floor((Date.now() - timestamp) / 1000);
-            if (seconds < 30) return "just now";
+            if (seconds < 30) return 'just now';
             const intervals = [
-                { label: "year", seconds: 31536000 },
-                { label: "month", seconds: 2592000 },
-                { label: "day", seconds: 86400 },
-                { label: "hour", seconds: 3600 },
-                { label: "minute", seconds: 60 },
+                { label: 'year', seconds: 31536000 },
+                { label: 'month', seconds: 2592000 },
+                { label: 'day', seconds: 86400 },
+                { label: 'hour', seconds: 3600 },
+                { label: 'minute', seconds: 60 },
             ];
             for (const interval of intervals) {
                 const count = Math.floor(seconds / interval.seconds);
-                if (count > 0) return `${count} ${interval.label}${count !== 1 ? "s" : ""} ago`;
+                if (count > 0)
+                    return `${count} ${interval.label}${count !== 1 ? 's' : ''} ago`;
             }
-            return "just now";
+            return 'just now';
         }
         function escapeHtml(text) {
             if (!text) return '';
             return text.replace(/[&<>"']/g, m => {
                 switch (m) {
-                    case '&': return '&amp;';
-                    case '<': return '&lt;';
-                    case '>': return '&gt;';
-                    case '"': return '&quot;';
-                    case "'": return '&#39;';
-                    default: return m;
+                    case '&':
+                        return '&amp;';
+                    case '<':
+                        return '&lt;';
+                    case '>':
+                        return '&gt;';
+                    case '"':
+                        return '&quot;';
+                    case "'":
+                        return '&#39;';
+                    default:
+                        return m;
                 }
             });
         }
 
         function startListeningMessages() {
             if (unsubscribeMessages) unsubscribeMessages();
-            loadingEl.classList.remove("hidden");
-            postFeed.innerHTML = "";
+            loadingEl.classList.remove('hidden');
+            postFeed.innerHTML = '';
 
-            const messagesCol = collection(db, "messages");
+            const messagesCol = collection(db, 'messages');
             unsubscribeMessages = onSnapshot(
                 messagesCol,
-                (querySnapshot) => {
+                querySnapshot => {
                     cachedMessagesData = querySnapshot.docs.map(docSnap => ({
                         id: docSnap.id,
-                        ...docSnap.data()
+                        ...docSnap.data(),
                     }));
                     renderMessages(cachedMessagesData);
-                    loadingEl.classList.add("hidden");
+                    loadingEl.classList.add('hidden');
                 },
                 error => {
-                    console.error("Error in real-time listener:", error);
-                    loadingEl.classList.add("hidden");
+                    console.error('Error in real-time listener:', error);
+                    loadingEl.classList.add('hidden');
                     postFeed.innerHTML = `<div class="text-center text-red-500 mt-10">Failed to load posts. Please try again later.</div>`;
                 }
             );
@@ -398,98 +509,147 @@
 
         function renderMessages(messages) {
             if (userLat === null || userLon === null) {
-                postFeed.innerHTML = '<div class="text-center text-yellow-600 mt-10">Location required to view posts.</div>';
+                postFeed.innerHTML =
+                    '<div class="text-center text-yellow-600 mt-10">Location required to view posts.</div>';
                 return;
             }
-            postFeed.innerHTML = "";
+            postFeed.innerHTML = '';
             updateTabs();
 
             const maxDistance = parseFloat(distanceSlider.value);
             const selectedCategory = categoryFilter.value;
             const now = Date.now();
-            let shown = 0;
 
-            // Filter first so we only iterate over matching posts
             const filteredMessages = messages.filter(data => {
+                const scheduled = data.scheduledAt?.seconds ? data.scheduledAt.seconds * 1000 : 0;
                 const expiry = data.expiresAt?.seconds ? data.expiresAt.seconds * 1000 : 0;
-                if (expiry && now > expiry) return false;
+                if (now < scheduled) return false; // Not yet active
+                if (now > expiry) return false; // Expired
+
                 const dist = getDistance(userLat, userLon, data.latitude, data.longitude);
                 if (dist > (data.distance ?? 1) || dist > maxDistance) return false;
-                if (currentTab === "Messaging" && data.category === "Food Share") return false;
-                if (currentTab === "Food Share" && data.category !== "Food Share") return false;
-                if (currentTab === "Messaging" && selectedCategory !== "All" && data.category !== selectedCategory) return false;
+                if (currentTab === 'Messaging' && selectedCategory !== 'All' && data.category === 'Food Share') return false;
+                if (currentTab === 'Food Share' && data.category !== 'Food Share') return false;
+                if (currentTab === 'Messaging' && selectedCategory !== 'All' && data.category !== selectedCategory)
+                    return false;
                 return true;
             });
 
-            // Progressive rendering
+            if (filteredMessages.length === 0) {
+                postFeed.innerHTML = `<div class="text-center text-gray-500 mt-10">No posts found for selected filters.</div>`;
+                return;
+            }
+
             filteredMessages.forEach((data, index) => {
                 setTimeout(() => {
-                    const authorName = data.authorName || "Unknown User";
+                    const authorName = data.authorName || 'Unknown User';
                     const dist = getDistance(userLat, userLon, data.latitude, data.longitude);
                     const liked = data.likes?.includes(currentUser.uid);
+                    const card = document.createElement('div');
+                    card.className =
+                        'post-card bg-white p-5 rounded-2xl shadow-lg hover:shadow-2xl transition-all animate-slideUp space-y-3 border border-gray-100';
+                    // Get category class
+                    let categoryClass = 'bg-gray-500';
+                    let categoryIcon = '📌';
+                    if (data.category === 'Community Msg') {
+                        categoryClass = 'category-community';
+                        categoryIcon = '💜';
+                    } else if (data.category === 'Emergency') {
+                        categoryClass = 'category-emergency';
+                        categoryIcon = '🚨';
+                    } else if (data.category === 'Request') {
+                        categoryClass = 'category-request';
+                        categoryIcon = '🙏';
+                    } else if (data.category === 'Service') {
+                        categoryClass = 'category-service';
+                        categoryIcon = '🔧';
+                    } else if (data.category === 'Food Share') {
+                        categoryClass = 'category-food';
+                        categoryIcon = '🍔';
+                    }
 
-                    const card = document.createElement("div");
-                    card.className = "bg-white p-4 rounded-xl shadow hover:shadow-md transition animate-fade space-y-3";
                     card.innerHTML = `
-        <div class="flex justify-between items-center">
-          <div>
-            <strong>${escapeHtml(authorName)}</strong>
-            <button type="button" class="text-indigo-600 text-xs ml-2 view-profile" data-uid="${data.uid ?? ''}">View Profile</button>
+        <div class="flex justify-between items-start">
+          <div class="flex items-center gap-2">
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-md">${authorName.charAt(0).toUpperCase()}</div>
+            <div>
+              <div class="font-bold text-gray-900">${escapeHtml(authorName)}</div>
+              <button type="button" class="text-indigo-600 text-xs hover:underline view-profile" data-uid="${data.uid ?? ''}">View Profile</button>
+            </div>
           </div>
-          <button type="button" class="like-btn text-sm ${liked ? 'text-red-500' : 'text-gray-400'}" data-id="${data.id}" aria-label="Like button">
-            ${liked ? '❤️' : '🤍'} ${data.likes?.length || 0}
+          <button type="button" class="like-btn flex items-center gap-1 px-3 py-1 rounded-full transition-all ${liked ? 'bg-red-50 text-red-500' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                        }" data-id="${data.id}" aria-label="Like button">
+            <span class="text-lg">${liked ? '❤️' : '🤍'}</span>
+            <span class="font-semibold text-sm">${data.likes?.length || 0}</span>
           </button>
         </div>
-        <h2 class="text-lg font-semibold text-gray-900">${escapeHtml(data.title)}</h2>
-        <p class="text-gray-700">${escapeHtml(data.description)}</p>
-        <div class="text-sm text-gray-500 flex justify-between">
-          <span>📍 ${escapeHtml(data.customLocation || "Unknown location")}</span>
-          <span>⏱️ ${timeAgo(data.createdAt?.seconds * 1000)}</span>
+        
+        <div class="space-y-2">
+          <div class="flex items-center gap-2">
+            <span class="${categoryClass} text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm flex items-center gap-1">
+              <span>${categoryIcon}</span>
+              <span>${escapeHtml(data.category)}</span>
+            </span>
+            <span class="text-xs text-gray-500 flex items-center gap-1">
+              <span>📍</span>
+              <span class="font-medium">${dist.toFixed(1)} km</span>
+            </span>
+          </div>
+          
+          <h2 class="text-xl font-bold text-gray-900 leading-tight">${escapeHtml(data.title)}</h2>
+          <p class="text-gray-600 leading-relaxed">${escapeHtml(data.description)}</p>
+          
+          ${data.imageUrl ? `<img src="${data.imageUrl}" alt="${escapeHtml(data.title)}" class="w-full h-auto max-h-96 object-cover rounded-xl shadow-md" onerror="this.style.display='none'"/>` : ''}
         </div>
-        <div class="text-xs text-indigo-500">
-          ${escapeHtml(data.category)} • ${dist.toFixed(2)} km away • 
-          <a href="https://maps.google.com/?q=${data.latitude},${data.longitude}" target="_blank" rel="noopener" class="underline">View Map</a>
+        
+        <div class="flex items-center justify-between text-sm text-gray-500 pt-2 border-t border-gray-100">
+          <div class="flex items-center gap-3">
+            <span class="flex items-center gap-1">
+              <span>📍</span>
+              <span class="font-medium">${escapeHtml(data.customLocation || 'Unknown location')}</span>
+            </span>
+            <span class="flex items-center gap-1">
+              <span>⏱️</span>
+              <span>${timeAgo(data.createdAt?.seconds * 1000)}</span>
+            </span>
+          </div>
+          <a href="https://maps.google.com/?q=${data.latitude},${data.longitude}" target="_blank" rel="noopener" class="text-indigo-600 hover:text-indigo-700 font-semibold flex items-center gap-1 hover:underline">
+            <span>🗺️</span>
+            <span>Map</span>
+          </a>
         </div>
-        <button type="button" class="comment-toggle mt-2 text-indigo-500 text-sm" data-id="${data.id}">
-          💬 Comments (${data.comments?.length || 0})
+        
+        <button type="button" class="comment-toggle w-full mt-2 text-indigo-600 hover:text-indigo-700 font-semibold text-sm flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-indigo-50 transition-all" data-id="${data.id}">
+          <span>💬</span>
+          <span>Comments (${data.comments?.length || 0})</span>
         </button>
-        <div class="comment-section hidden space-y-2 mt-2" data-id="${data.id}">
-          <div class="comments max-h-40 overflow-auto text-sm space-y-2"></div>
-          <div class="flex gap-2 mt-2">
-            <input class="comment-input flex-1 border rounded px-2 py-1 text-sm" placeholder="Write a comment..." />
-            <button type="button" class="send-comment bg-indigo-600 text-white px-3 py-1 rounded text-sm">Send</button>
+        
+        <div class="comment-section hidden space-y-3 mt-3 p-3 bg-gray-50 rounded-lg" data-id="${data.id}">
+          <div class="comments max-h-40 overflow-auto space-y-2"></div>
+          <div class="flex gap-2">
+            <input class="comment-input flex-1 border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200 transition-all" placeholder="Write a comment..." />
+            <button type="button" class="send-comment bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-md hover:shadow-lg transition-all">Send</button>
           </div>
         </div>
-      `;
+        `;
                     postFeed.appendChild(card);
-                    shown++;
-
-                    // Attach handlers for this one card immediately (so Like/Comment work without waiting)
                     attachHandlers();
-
-                    if (shown === filteredMessages.length) {
-                        if (shown === 0) {
-                            postFeed.innerHTML = `<div class="text-center text-gray-500 mt-10">No posts found for selected filters.</div>`;
-                        }
-                    }
-                }, index * 1); // 50ms stagger between posts (tweak as desired)
+                }, index * 1);
             });
         }
 
-
         function updateTabs() {
-            msgTabBtn.classList.toggle("border-indigo-500", currentTab === "Messaging");
-            msgTabBtn.classList.toggle("border-transparent", currentTab !== "Messaging");
-            foodTabBtn.classList.toggle("border-indigo-500", currentTab === "Food Share");
-            foodTabBtn.classList.toggle("border-transparent", currentTab !== "Food Share");
-            if (currentTab === "Messaging") {
-                categoryFilter.classList.remove("hidden");
+            msgTabBtn.classList.toggle('border-indigo-500', currentTab === 'Messaging');
+            msgTabBtn.classList.toggle('border-transparent', currentTab !== 'Messaging');
+            foodTabBtn.classList.toggle('border-indigo-500', currentTab === 'Food Share');
+            foodTabBtn.classList.toggle('border-transparent', currentTab !== 'Food Share');
+            if (currentTab === 'Messaging') {
+                categoryFilter.classList.remove('hidden');
             } else {
-                categoryFilter.classList.add("hidden");
+                categoryFilter.classList.add('hidden');
             }
         }
 
-        // -- ALL DYNAMIC BUTTONS: Like, Comment, Profile (robust, always runs after rendering) --
         function attachHandlers() {
             // LIKE
             Array.from(document.getElementsByClassName('like-btn')).forEach(btn => {
@@ -497,9 +657,8 @@
                     const id = btn.dataset.id;
                     if (likeInProgress.has(id)) return;
                     likeInProgress.add(id);
-
                     if (!currentUser) {
-                        alert("Please login to like posts.");
+                        alert('Please login to like posts.');
                         likeInProgress.delete(id);
                         return;
                     }
@@ -510,12 +669,10 @@
                         const userLiked = d.likes?.includes(currentUser.uid);
                         const op = userLiked ? arrayRemove : arrayUnion;
                         await updateDoc(ref, { likes: op(currentUser.uid) });
-
-                        // Refresh button state by re-rendering all
                         renderMessages(cachedMessagesData);
                     } catch (err) {
-                        console.error("Error updating likes:", err);
-                        alert("Failed to update like. Please try again.");
+                        console.error('Error updating likes:', err);
+                        alert('Failed to update like. Please try again.');
                     } finally {
                         likeInProgress.delete(id);
                     }
@@ -533,8 +690,9 @@
                         const snap = await getDoc(ref);
                         const comments = snap.data().comments || [];
                         const commentsEl = section.querySelector('.comments');
-                        commentsEl.innerHTML = comments.map(c =>
-                            `<div><strong>${escapeHtml(c.name)}</strong>: ${escapeHtml(c.text)}</div>`).join('');
+                        commentsEl.innerHTML = comments
+                            .map(c => `<div><strong>${escapeHtml(c.name)}</strong>: ${escapeHtml(c.text)}</div>`)
+                            .join('');
                         const input = section.querySelector('.comment-input');
                         if (input) input.focus();
                     }
@@ -550,12 +708,12 @@
                     const id = section.dataset.id;
                     const commentToggleBtn = document.querySelector(`.comment-toggle[data-id="${id}"]`);
                     if (!text) return;
-                    if (!userProfile?.name) return location.href = 'profile.html';
+                    if (!userProfile?.name) return (location.href = 'profile.html');
                     const comment = {
                         uid: currentUser.uid,
                         name: userProfile.name,
                         text,
-                        timestamp: Date.now()
+                        timestamp: Date.now(),
                     };
                     try {
                         await updateDoc(doc(db, 'messages', id), { comments: arrayUnion(comment) });
@@ -563,14 +721,14 @@
                         const snap = await getDoc(doc(db, 'messages', id));
                         const comments = snap.data().comments || [];
                         const commentsEl = section.querySelector('.comments');
-                        commentsEl.innerHTML = comments.map(c =>
-                            `<div><strong>${escapeHtml(c.name)}</strong>: ${escapeHtml(c.text)}</div>`).join('');
-                        if (commentToggleBtn)
-                            commentToggleBtn.textContent = `💬 Comments (${comments.length})`;
+                        commentsEl.innerHTML = comments
+                            .map(c => `<div><strong>${escapeHtml(c.name)}</strong>: ${escapeHtml(c.text)}</div>`)
+                            .join('');
+                        if (commentToggleBtn) commentToggleBtn.textContent = `💬 Comments (${comments.length})`;
                         input.focus();
                     } catch (err) {
-                        console.error("Error adding comment:", err);
-                        alert("Failed to post comment. Please try again.");
+                        console.error('Error adding comment:', err);
+                        alert('Failed to post comment. Please try again.');
                     }
                 };
             });
@@ -585,33 +743,34 @@
             });
         }
 
-        // Tab switching
-        msgTabBtn.addEventListener("click", () => {
-            if (currentTab !== "Messaging") {
-                currentTab = "Messaging";
+        msgTabBtn.addEventListener('click', () => {
+            if (currentTab !== 'Messaging') {
+                currentTab = 'Messaging';
                 updateTabs();
                 renderMessages(cachedMessagesData);
             }
         });
-        foodTabBtn.addEventListener("click", () => {
-            if (currentTab !== "Food Share") {
-                currentTab = "Food Share";
+        foodTabBtn.addEventListener('click', () => {
+            if (currentTab !== 'Food Share') {
+                currentTab = 'Food Share';
                 updateTabs();
                 renderMessages(cachedMessagesData);
             }
         });
-        distanceSlider.addEventListener("input", () => {
+        distanceSlider.addEventListener('input', () => {
             distanceValue.textContent = `${distanceSlider.value} km`;
             clearTimeout(window.distanceTimeout);
             window.distanceTimeout = setTimeout(() => {
                 renderMessages(cachedMessagesData);
             }, 300);
         });
-        categoryFilter.addEventListener("change", () => {
+        categoryFilter.addEventListener('change', () => {
             renderMessages(cachedMessagesData);
         });
         updateTabs();
     </script>
+
+
 
 </body>
 

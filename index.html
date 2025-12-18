@@ -2,12 +2,16 @@
 <html lang="en" class="scroll-smooth">
 
 <head>
+  <link rel="icon" href="Images/favicon.ico" type="image/x-icon">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Login | NearbyNow</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script defer src="https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js"></script>
-  <script defer src="https://www.gstatic.com/firebasejs/10.5.0/firebase-auth.js"></script>
+
+  <!-- Firebase v8 SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
   <style>
     body {
@@ -133,7 +137,7 @@
           <svg xmlns="http://www.w3.org/2000/svg" id="signupPasswordEye" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
             stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            <path stroke-linecap="round" stroke-linejoin="round"
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
           </svg>
         </button>
@@ -148,7 +152,7 @@
     <div class="mt-10 text-center">
       <p class="text-gray-500 mb-4 font-semibold tracking-wide select-none">Or continue with</p>
       <div class="flex justify-center gap-5">
-        <button aria-label="Sign in with Google" title="Google"
+        <button aria-label="Sign in with Google" title="Google" id="googleSignInBtn"
           class="flex items-center justify-center gap-3 rounded-lg border border-gray-300 px-5 py-2 font-semibold text-gray-700 hover:bg-gray-100 transition duration-150 active:scale-[.97] bounce-on-hover">
           <svg class="h-6 w-6" aria-hidden="true" viewBox="0 0 533.5 544.3">
             <path fill="#4285f4"
@@ -162,51 +166,35 @@
           </svg>
           Google
         </button>
-        <button aria-label="Sign in with Facebook" title="Facebook"
-          class="flex items-center justify-center gap-3 rounded-lg border border-gray-300 bg-blue-600 px-5 py-2 font-semibold text-white hover:bg-blue-700 transition duration-150 active:scale-[.97] bounce-on-hover">
-          <svg class="h-6 w-6" aria-hidden="true" fill="currentColor" viewBox="0 0 24 24">
-            <path
-              d="M22 12c0-5.522-4.478-10-10-10S2 6.478 2 12c0 5.018 3.676 9.167 8.438 9.877v-6.987h-2.54v-2.89h2.54v-2.205c0-2.507 1.492-3.89 3.776-3.89 1.094 0 2.238.195 2.238.195v2.462h-1.26c-1.243 0-1.63.772-1.63 1.562v1.876h2.773l-.443 2.89h-2.33v6.987C18.324 21.167 22 17.018 22 12z" />
-          </svg>
-          Facebook
-        </button>
       </div>
     </div>
 
   </main>
 
-  <script type="module">
-    // Firebase config and imports
-    const firebaseConfig = {
-      apiKey: "AIzaSyAusCQM4vEgjV3OGpyZTN7iBlEf3AxbaOY",
-      authDomain: "nearbynow07.firebaseapp.com",
-      projectId: "nearbynow07",
-      storageBucket: "nearbynow07.firebasestorage.app",
-      messagingSenderId: "384534035331",
-      appId: "1:384534035331:web:df33109271d972c16e94b6",
-    };
+  <script>
+    var auth;
+    var googleProvider;
 
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";
-    import {
-      getAuth,
-      signInWithEmailAndPassword,
-      createUserWithEmailAndPassword,
-      sendPasswordResetEmail,
-      signInWithPopup,
-      GoogleAuthProvider,
-      FacebookAuthProvider,
-    } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-auth.js";
+    async function initFirebase() {
+      // Fetch env.json configuration
+      const response = await fetch('./env.json');
+      const env = await response.json();
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
+      // Initialize Firebase v8
+      firebase.initializeApp(env.FIREBASE_CONFIG);
+      auth = firebase.auth();
+      googleProvider = new firebase.auth.GoogleAuthProvider();
+    }
+
+    initFirebase().catch(e => console.error("Firebase init failed", e));
 
     // Tab toggle elements
-    const loginForm = document.getElementById("loginForm");
-    const signupForm = document.getElementById("signupForm");
-    const showLogin = document.getElementById("showLogin");
-    const showSignup = document.getElementById("showSignup");
-    const msg = document.getElementById("message");
-    const tabSlider = document.getElementById("tabSlider");
+    var loginForm = document.getElementById("loginForm");
+    var signupForm = document.getElementById("signupForm");
+    var showLogin = document.getElementById("showLogin");
+    var showSignup = document.getElementById("showSignup");
+    var msg = document.getElementById("message");
+    var tabSlider = document.getElementById("tabSlider");
 
     function switchToLogin() {
       loginForm.classList.remove("hidden");
@@ -238,26 +226,24 @@
 
     // Password visibility toggles
     function setupPasswordToggle(toggleBtnId, passwordInputId) {
-      const toggleBtn = document.getElementById(toggleBtnId);
-      const passwordInput = document.getElementById(passwordInputId);
-      const eyeIcon = toggleBtn.querySelector("svg");
+      var toggleBtn = document.getElementById(toggleBtnId);
+      var passwordInput = document.getElementById(passwordInputId);
+      var eyeIcon = toggleBtn.querySelector("svg");
 
-      toggleBtn.addEventListener("click", () => {
-        const isPassword = passwordInput.type === "password";
+      toggleBtn.addEventListener("click", function () {
+        var isPassword = passwordInput.type === "password";
         passwordInput.type = isPassword ? "text" : "password";
 
         if (isPassword) {
-          eyeIcon.innerHTML = `
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.986 9.986 0 012.075-3.505M6 6l12 12"/>
-          `;
+          eyeIcon.innerHTML = '\
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"\
+          d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.986 9.986 0 012.075-3.505M6 6l12 12"/>';
         } else {
-          eyeIcon.innerHTML = `
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-          `;
+          eyeIcon.innerHTML = '\
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"\
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />\
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"\
+              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />';
         }
       });
     }
@@ -266,10 +252,10 @@
     setupPasswordToggle("toggleSignupPassword", "signupPassword");
 
     // Login form submit
-    loginForm.onsubmit = async (e) => {
+    loginForm.onsubmit = function (e) {
       e.preventDefault();
-      const email = document.getElementById("loginEmail").value.trim();
-      const password = document.getElementById("loginPassword").value.trim();
+      var email = document.getElementById("loginEmail").value.trim();
+      var password = document.getElementById("loginPassword").value.trim();
 
       if (!email || !password) {
         msg.textContent = "Please enter email and password.";
@@ -277,22 +263,25 @@
         return;
       }
 
-      try {
-        await signInWithEmailAndPassword(auth, email, password);
-        msg.style.color = "green";
-        msg.textContent = "Login successful!";
-        setTimeout(() => window.location.href = "home.html", 800);
-      } catch (error) {
-        msg.style.color = "red";
-        msg.textContent = error.message.replace(/^Firebase:\s*/, "");
-      }
+      auth.signInWithEmailAndPassword(email, password)
+        .then(function () {
+          msg.style.color = "green";
+          msg.textContent = "Login successful!";
+          setTimeout(function () {
+            window.location.href = "home.html";
+          }, 800);
+        })
+        .catch(function (error) {
+          msg.style.color = "red";
+          msg.textContent = error.message.replace(/^Firebase:\s*/, "");
+        });
     };
 
     // Signup form submit
-    signupForm.onsubmit = async (e) => {
+    signupForm.onsubmit = function (e) {
       e.preventDefault();
-      const email = document.getElementById("signupEmail").value.trim();
-      const password = document.getElementById("signupPassword").value.trim();
+      var email = document.getElementById("signupEmail").value.trim();
+      var password = document.getElementById("signupPassword").value.trim();
 
       if (!email || !password) {
         msg.textContent = "Please enter email and password.";
@@ -300,21 +289,23 @@
         return;
       }
 
-      try {
-        await createUserWithEmailAndPassword(auth, email, password);
-        msg.style.color = "green";
-        msg.textContent = "Signup successful!";
-        setTimeout(() => window.location.href = "home.html", 800);
-      } catch (error) {
-        msg.style.color = "red";
-        msg.textContent = error.message.replace(/^Firebase:\s*/, "");
-      }
+      auth.createUserWithEmailAndPassword(email, password)
+        .then(function () {
+          msg.style.color = "green";
+          msg.textContent = "Signup successful!";
+          setTimeout(function () {
+            window.location.href = "home.html";
+          }, 800);
+        })
+        .catch(function (error) {
+          msg.style.color = "red";
+          msg.textContent = error.message.replace(/^Firebase:\s*/, "");
+        });
     };
 
     // Password reset handler
-    const passwordResetBtn = document.getElementById("passwordResetBtn");
-    passwordResetBtn.onclick = async () => {
-      const email = document.getElementById("loginEmail").value.trim();
+    document.getElementById("passwordResetBtn").onclick = function () {
+      var email = document.getElementById("loginEmail").value.trim();
 
       if (!email) {
         msg.style.color = "red";
@@ -322,44 +313,32 @@
         return;
       }
 
-      try {
-        await sendPasswordResetEmail(auth, email);
-        msg.style.color = "green";
-        msg.textContent = "Password reset email sent!";
-      } catch (error) {
-        msg.style.color = "red";
-        msg.textContent = error.message.replace(/^Firebase:\s*/, "");
-      }
+      auth.sendPasswordResetEmail(email)
+        .then(function () {
+          msg.style.color = "green";
+          msg.textContent = "Password reset email sent!";
+        })
+        .catch(function (error) {
+          msg.style.color = "red";
+          msg.textContent = error.message.replace(/^Firebase:\s*/, "");
+        });
     };
 
-    // Google OAuth sign-in
-    const googleBtn = document.querySelector("[aria-label='Sign in with Google']");
-    googleBtn.addEventListener("click", async () => {
-      try {
-        const provider = new GoogleAuthProvider();
-        await signInWithPopup(auth, provider);
-        msg.style.color = "green";
-        msg.textContent = "Google sign-in successful!";
-        setTimeout(() => window.location.href = "home.html", 800);
-      } catch (error) {
-        msg.style.color = "red";
-        msg.textContent = error.message.replace(/^Firebase:\s*/, "");
-      }
-    });
-
-    // Facebook OAuth sign-in
-    const fbBtn = document.querySelector("[aria-label='Sign in with Facebook']");
-    fbBtn.addEventListener("click", async () => {
-      try {
-        const provider = new FacebookAuthProvider();
-        await signInWithPopup(auth, provider);
-        msg.style.color = "green";
-        msg.textContent = "Facebook sign-in successful!";
-        setTimeout(() => window.location.href = "home.html", 800);
-      } catch (error) {
-        msg.style.color = "red";
-        msg.textContent = error.message.replace(/^Firebase:\s*/, "");
-      }
+    // Google sign-in button
+    document.getElementById("googleSignInBtn").addEventListener("click", function () {
+      var provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider)
+        .then(function () {
+          msg.style.color = "green";
+          msg.textContent = "Google sign-in successful!";
+          setTimeout(function () {
+            window.location.href = "home.html";
+          }, 800);
+        })
+        .catch(function (error) {
+          msg.style.color = "red";
+          msg.textContent = error.message.replace(/^Firebase:\s*/, "");
+        });
     });
   </script>
 </body>

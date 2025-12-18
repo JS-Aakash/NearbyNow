@@ -2,6 +2,7 @@
 <html lang="en">
 
 <head>
+    <link rel="icon" href="Images/favicon.ico" type="image/x-icon">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Profile | NearbyNow</title>
@@ -479,6 +480,7 @@
                     ${isOwnProfile ? `<button data-post-id="${postId}" aria-label="Delete post" title="Delete Post" class="delete-post-btn text-red-500 hover:text-red-700 transition">🗑️</button>` : ''}
                 </div>
                 <p class="text-gray-700">${escapeHtml(postData.description)}</p>
+                ${postData.imageUrl ? `<img src="${postData.imageUrl}" alt="${escapeHtml(postData.title)}" class="w-full h-auto max-h-80 object-cover rounded-lg shadow-sm mb-2" onerror="this.style.display='none'"/>` : ''}
 
                 <div class="text-xs text-gray-500 flex justify-between">
                     <div>${escapeHtml(postData.customLocation || "Unknown location")}</div>
